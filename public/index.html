@@ -586,10 +586,18 @@
         ...options
     });
     if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Xatolik yuz berdi');
+        // Xatolik matnini olishga harakat qilamiz
+        let errorMessage = 'Xatolik yuz berdi';
+        try {
+            const errData = await response.json();
+            if (errData.error) errorMessage = errData.error;
+        } catch {
+            // Agar JSON bo'lmasa, status matnini olamiz
+            errorMessage = response.statusText || `Server ${response.status} xatolik`;
+        }
+        throw new Error(errorMessage);
     }
-    // Agar javob body bo'lmasa, null qaytar
+    // Agar javob body bo'sh bo'lsa, null qaytar
     const contentLength = response.headers.get('content-length');
     if (contentLength && parseInt(contentLength) === 0) {
         return null;
@@ -911,27 +919,39 @@
     // ==========================
     // O'CHIRISH FUNKSIYASI (ro'yxatda)
     // ==========================
-    async function deleteAppeal(appealId) {
-        if (!isAdminFlag) return;
-        tg.showPopup({
-            title: 'Tasdiqlang',
-            message: `#${appealId} raqamli murojaatni o‘chirishni xohlaysizmi?`,
-            buttons: [
-                { type: 'destructive', text: 'Ha, o‘chirish', id: 'confirm' },
-                { type: 'cancel', text: 'Bekor qilish' }
-            ]
-        }, async (btnId) => {
-            if (btnId === 'confirm') {
-                try {
-                    await apiFetch('/admin/appeals/' + appealId, { method: 'DELETE' });
+   async function deleteAppeal(appealId) {
+    if (!isAdminFlag) return;
+    tg.showPopup({
+        title: 'Tasdiqlang',
+        message: `#${appealId} raqamli murojaatni o‘chirishni xohlaysizmi?`,
+        buttons: [
+            { type: 'destructive', text: 'Ha, o‘chirish', id: 'confirm' },
+            { type: 'cancel', text: 'Bekor qilish' }
+        ]
+    }, async (btnId) => {
+        if (btnId === 'confirm') {
+            try {
+                const response = await fetch('/api/admin/appeals/' + appealId, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
                     tg.showPopup({ title: 'Bajarildi', message: 'Murojaat o‘chirildi!', buttons: [{ type: 'ok' }] });
                     renderAdminAppeals();
-                } catch (err) {
-                    tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
+                } else {
+                    let errorMsg = 'O‘chirishda xatolik';
+                    try {
+                        const err = await response.json();
+                        if (err.error) errorMsg = err.error;
+                    } catch {}
+                    tg.showPopup({ title: 'Xatolik', message: errorMsg, buttons: [{ type: 'ok' }] });
                 }
+            } catch (err) {
+                tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
             }
-        });
-    }
+        }
+    });
+}
 
     // ==========================
     // O'CHIRISH (tafsilot sahifasidan)
@@ -945,26 +965,44 @@
     // MUDDATNI UZAYTIRISH
     // ==========================
     async function extendDeadline() {
-        if (!isAdminFlag || !currentAppealId) return;
-        const days = parseInt(document.getElementById('extendDays').value);
-        if (!days || days < 1) {
-            tg.showPopup({ title: 'Xatolik', message: 'Iltimos, to‘g‘ri kunlar sonini kiriting (min 1).', buttons: [{ type: 'ok' }] });
-            return;
-        }
-        try {
-            const result = await apiFetch('/admin/appeals/' + currentAppealId + '/extend', {
-                method: 'PUT',
-                body: JSON.stringify({ days })
+    if (!isAdminFlag || !currentAppealId) return;
+    const days = parseInt(document.getElementById('extendDays').value);
+    if (!days || days < 1) {
+        tg.showPopup({
+            title: 'Xatolik',
+            message: 'Iltimos, to‘g‘ri kunlar sonini kiriting (min 1).',
+            buttons: [{ type: 'ok' }]
+        });
+        return;
+    }
+    try {
+        const response = await fetch('/api/admin/appeals/' + currentAppealId + '/extend', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days })
+        });
+        if (response.ok) {
+            tg.showPopup({
+                title: 'Bajarildi',
+                message: `Muddat ${days} kunga uzaytirildi!`,
+                buttons: [{ type: 'ok' }]
             });
-            tg.showPopup({ title: 'Bajarildi', message: `Muddat ${days} kunga uzaytirildi!`, buttons: [{ type: 'ok' }] });
-            // refresh detail
+            // Ma'lumotlarni yangilash
             openAppealDetail(currentAppealId);
             renderAdminAppeals();
             renderAdminDashboard();
-        } catch (err) {
-            tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
+        } else {
+            let errorMsg = 'Muddat uzaytirishda xatolik';
+            try {
+                const err = await response.json();
+                if (err.error) errorMsg = err.error;
+            } catch {}
+            tg.showPopup({ title: 'Xatolik', message: errorMsg, buttons: [{ type: 'ok' }] });
         }
+    } catch (err) {
+        tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
     }
+}
 
     // ==========================
     // MUROJAAT TAFSILOTI (admin) – bo‘limlarga ajratilgan, o'chirish va uzaytirish tugmalari
