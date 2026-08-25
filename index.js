@@ -5,7 +5,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_TOKEN = '8823302505:AAFZkPCwZ6pK9It-uTQ4jVOAFb44Z-3kf-8';
 console.log('🔍 BOT_TOKEN mavjudmi?', BOT_TOKEN ? 'HA' : 'YO\'Q');
 
 // ----- Fayl yo'llari -----
