@@ -3,7 +3,6 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Telegram bot token (Railway Variables dan olinadi)
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 app.use(cors());
@@ -14,10 +13,10 @@ app.use(express.static('public'));
 let appeals = [];
 let nextId = 1;
 
-// ----- ADMIN ID RO'YXATI (o'zingiznikini yozing!) -----
-const ADMIN_IDS = [7117334799]; // 
+// ----- ADMIN ID (faqat shu ID admin) -----
+const ADMIN_IDS = [7117334799];
 
-// ----- FUNKSIYA: Telegram xabar yuborish -----
+// ----- TELEGRAM XABAR YUBORISH -----
 async function sendTelegramMessage(chatId, text) {
     if (!BOT_TOKEN) {
         console.error('BOT_TOKEN sozlanmagan!');
@@ -38,7 +37,7 @@ async function sendTelegramMessage(chatId, text) {
     }
 }
 
-// ----- API: FOYDALANUVCHI (murojaat yuborish va o'z murojaatlarini ko'rish) -----
+// ----- API: FOYDALANUVCHI -----
 app.get('/api/appeals', (req, res) => {
     res.json(appeals);
 });
@@ -65,7 +64,7 @@ app.post('/api/appeals', (req, res) => {
     res.status(201).json(newAppeal);
 });
 
-// ----- API: ADMIN (barcha murojaatlar, tahrirlash, o'chirish) -----
+// ----- API: ADMIN -----
 app.get('/api/admin/appeals', (req, res) => {
     res.json(appeals);
 });
@@ -95,7 +94,7 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
     res.status(204).send();
 });
 
-// ----- API: ADMIN JAVOB YOZGANDA XABAR YUBORISH -----
+// ----- ADMIN JAVOB YOZGANDA XABAR YUBORISH -----
 app.post('/api/admin/notify', async (req, res) => {
     const { appealId, message } = req.body;
     const appeal = appeals.find(a => a.id === appealId);
@@ -114,17 +113,16 @@ app.post('/api/admin/notify', async (req, res) => {
     }
 });
 
-// ----- FRONTEND (barcha boshqa so'rovlar index.html ga) -----
+// ----- FRONTEND -----
 app.get('*', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-// ----- SERNI ISHGA TUSHIRISH -----
 app.listen(PORT, () => {
     console.log(`✅ Server ${PORT} portda ishga tushdi`);
     if (BOT_TOKEN) {
         console.log('🤖 Telegram bot ulangan');
     } else {
-        console.warn('⚠️ BOT_TOKEN sozlanmagan! Iltimos, Railway Variables ga qo\'shing.');
+        console.warn('⚠️ BOT_TOKEN sozlanmagan!');
     }
 });
