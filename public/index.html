@@ -580,17 +580,26 @@
     // ==========================
     const API_BASE = '/api';
 
-    async function apiFetch(endpoint, options = {}) {
-        const response = await fetch(API_BASE + endpoint, {
-            headers: { 'Content-Type': 'application/json' },
-            ...options
-        });
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            throw new Error(err.error || 'Xatolik yuz berdi');
-        }
-        return response.json();
+   async function apiFetch(endpoint, options = {}) {
+    const response = await fetch(API_BASE + endpoint, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Xatolik yuz berdi');
     }
+    // Agar javob body bo'lmasa, null qaytar
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) === 0) {
+        return null;
+    }
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
 
     // ==========================
     // XABARNOMALAR
