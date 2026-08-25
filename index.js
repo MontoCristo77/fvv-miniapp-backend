@@ -35,20 +35,29 @@ let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 // ----- ADMIN ID LAR -----
 const ADMIN_IDS = [7117334799]; // Qo'shimcha admin ID larini qo'shishingiz mumkin
 
-// ----- Telegram xabar yuborish -----
+// ----- Telegram xabar yuborish (yaxshilangan) -----
 async function sendTelegramMessage(chatId, text) {
-    if (!BOT_TOKEN) return false;
+    if (!BOT_TOKEN) {
+        console.error('❌ BOT_TOKEN sozlanmagan!');
+        return false;
+    }
     try {
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        console.log(`📤 Telegram xabar yuborilmoqda: chatId=${chatId}`);
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: chatId, text: text })
         });
         const data = await response.json();
+        if (!data.ok) {
+            console.error('❌ Telegram API xatolik:', data);
+        } else {
+            console.log('✅ Telegram xabar muvaffaqiyatli yuborildi');
+        }
         return data.ok === true;
     } catch (err) {
-        console.error('Telegram xabar yuborish xatolik:', err);
+        console.error('❌ Telegram xabar yuborish xatolik:', err);
         return false;
     }
 }
@@ -117,7 +126,7 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
     res.status(204).send();
 });
 
-// ----- ADMIN JAVOB YOZGANDA XABAR YUBORISH -----
+// ----- ADMIN JAVOB YOZGANDA XABAR YUBORISH (yaxshilangan) -----
 app.post('/api/admin/notify', async (req, res) => {
     const { appealId, message } = req.body;
     const appeal = appeals.find(a => a.id === appealId);
@@ -127,12 +136,15 @@ app.post('/api/admin/notify', async (req, res) => {
     if (!appeal.userId) {
         return res.status(400).json({ error: 'Foydalanuvchi ID si yo‘q' });
     }
+    if (!BOT_TOKEN) {
+        return res.status(500).json({ error: 'BOT_TOKEN sozlanmagan, xabar yuborib bo‘lmadi' });
+    }
     const text = `📩 Sizning #${appealId} raqamli murojaatingizga javob berildi:\n\n${message}`;
     const sent = await sendTelegramMessage(appeal.userId, text);
     if (sent) {
         res.json({ success: true, message: 'Xabar yuborildi' });
     } else {
-        res.status(500).json({ error: 'Xabar yuborishda xatolik' });
+        res.status(500).json({ error: 'Xabar yuborishda xatolik. Telegram loglarini tekshiring.' });
     }
 });
 
@@ -153,6 +165,6 @@ app.listen(PORT, () => {
     if (BOT_TOKEN) {
         console.log('🤖 Telegram bot ulangan');
     } else {
-        console.warn('⚠️ BOT_TOKEN sozlanmagan!');
+        console.warn('⚠️ BOT_TOKEN sozlanmagan! Iltimos, Railway Variables ga qo\'shing.');
     }
 });
