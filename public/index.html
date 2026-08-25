@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* === GLOBAL STYLES === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Roboto, sans-serif;
@@ -282,9 +283,9 @@
         .detail-section:last-child { border-bottom: none; }
         .detail-section .label { font-weight: 600; color: #5a6b7a; font-size: 13px; }
         .detail-section .value { font-size: 15px; margin-top: 2px; }
-        @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
         .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .flex-row .btn-sm { width: auto; }
+        @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
@@ -299,8 +300,7 @@
 </header>
 
 <div class="container" id="appContainer">
-
-    <!-- USER HOME -->
+    <!-- USER SECTION -->
     <div id="section-userHome" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-home"></i> Bosh sahifa</div>
@@ -316,7 +316,6 @@
         </div>
     </div>
 
-    <!-- USER NEW APPEAL -->
     <div id="section-userNewAppeal" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-pen-alt"></i> Yangi murojaat</div>
@@ -362,7 +361,6 @@
         </div>
     </div>
 
-    <!-- USER APPEALS -->
     <div id="section-userAppeals" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-list-ul"></i> Mening murojaatlarim</div>
@@ -370,7 +368,7 @@
         </div>
     </div>
 
-    <!-- ADMIN DASHBOARD -->
+    <!-- ADMIN SECTION -->
     <div id="section-adminDashboard" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-chart-pie"></i> Dashboard</div>
@@ -401,7 +399,6 @@
         <button class="btn btn-sm btn-outline" onclick="navigateTo('adminAppeals')"><i class="fas fa-list"></i> Barcha murojaatlarni ko‘rish</button>
     </div>
 
-    <!-- ADMIN APPEALS -->
     <div id="section-adminAppeals" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-tasks"></i> Barcha murojaatlar</div>
@@ -418,7 +415,6 @@
         </div>
     </div>
 
-    <!-- ADMIN APPEAL DETAIL -->
     <div id="section-adminAppealDetail" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-info-circle"></i> Murojaat tafsilotlari</div>
@@ -498,7 +494,7 @@
     document.getElementById('userName').textContent = currentUser.firstName + ' ' + currentUser.lastName;
 
     // ==========================
-    // ADMIN STATUS
+    // ADMINLIKNI TEKSHIRISH
     // ==========================
     async function checkAdminStatus() {
         try {
@@ -526,7 +522,7 @@
     }
 
     // ==========================
-    // NAVIGATION
+    // NAVIGATSION
     // ==========================
     function setupNavigation() {
         const admin = isAdminFlag;
@@ -572,13 +568,10 @@
         if (sectionId === 'adminDashboard') renderAdminDashboard();
         if (sectionId === 'adminAppeals') renderAdminAppeals();
         if (sectionId === 'userHome') renderNotifications();
-        if (sectionId === 'adminAppealDetail') {
-            // detail already rendered
-        }
     }
 
     // ==========================
-    // API FETCH (tuzatilgan)
+    // API SO'ROVLARI (tuzatilgan)
     // ==========================
     const API_BASE = '/api';
 
@@ -609,7 +602,7 @@
     }
 
     // ==========================
-    // NOTIFICATIONS
+    // XABARNOMALAR
     // ==========================
     async function renderNotifications() {
         try {
@@ -640,10 +633,9 @@
     }
 
     // ==========================
-    // NEW APPEAL
+    // YANGI MUROJAAT
     // ==========================
     let selectedFile = null;
-
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -652,13 +644,11 @@
             document.getElementById('filePreview').style.display = 'flex';
         }
     });
-
     function removeFile() {
         selectedFile = null;
         document.getElementById('fileInput').value = '';
         document.getElementById('filePreview').style.display = 'none';
     }
-
     document.getElementById('appealForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         if (isAdminFlag) {
@@ -709,7 +699,7 @@
     });
 
     // ==========================
-    // USER APPEALS
+    // FOYDALANUVCHI MUROJAATLARI
     // ==========================
     async function renderUserAppeals() {
         if (isAdminFlag) return;
@@ -855,7 +845,7 @@
     }
 
     // ==========================
-    // ADMIN APPEALS LIST
+    // ADMIN MUROJAATLAR RO'YXATI
     // ==========================
     let allAppealsCache = [];
 
@@ -901,7 +891,7 @@
                 a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
             const isOverdue = a.status !== 'resolved' && new Date(a.deadline) < new Date();
             html += `
-                <div class="appeal-item" style="cursor:pointer; ${isOverdue ? 'border-left-color: var(--danger);' : ''}">
+                <div class="appeal-item" style="${isOverdue ? 'border-left-color: var(--danger);' : ''}">
                     <div><strong>#${a.id}</strong> - ${a.fullName || a.userName} (${a.region}) ${isOverdue ? '🚨' : ''}</div>
                     <div style="font-size:13px;">${a.description.substring(0,50)}...</div>
                     <div class="meta">
@@ -919,7 +909,7 @@
     }
 
     // ==========================
-    // DELETE APPEAL (to‘g‘ridan-to‘g‘ri fetch)
+    // O'CHIRISH FUNKSIYASI (to‘g‘rilangan)
     // ==========================
     async function deleteAppeal(appealId) {
         if (!isAdminFlag) return;
@@ -940,6 +930,7 @@
                     if (response.ok) {
                         tg.showPopup({ title: 'Bajarildi', message: 'Murojaat o‘chirildi!', buttons: [{ type: 'ok' }] });
                         renderAdminAppeals();
+                        renderAdminDashboard();
                     } else {
                         let errorMsg = 'O‘chirishda xatolik';
                         try {
@@ -961,7 +952,7 @@
     }
 
     // ==========================
-    // EXTEND DEADLINE (to‘g‘ridan-to‘g‘ri fetch)
+    // MUDDATNI UZAYTIRISH (to‘g‘rilangan)
     // ==========================
     async function extendDeadline() {
         if (!isAdminFlag || !currentAppealId) return;
@@ -987,7 +978,7 @@
                     message: `Muddat ${days} kunga uzaytirildi!`,
                     buttons: [{ type: 'ok' }]
                 });
-                // Refresh detail
+                // Ma'lumotlarni yangilash
                 await openAppealDetail(currentAppealId);
                 await renderAdminAppeals();
                 await renderAdminDashboard();
@@ -1008,7 +999,7 @@
     }
 
     // ==========================
-    // APPEAL DETAIL
+    // MUROJAAT TAFSILOTI (admin)
     // ==========================
     let currentAppealId = null;
 
@@ -1066,7 +1057,7 @@
     }
 
     // ==========================
-    // SUBMIT ADMIN RESPONSE
+    // JAVOB YUBORISH (admin)
     // ==========================
     async function submitAdminResponse() {
         if (!isAdminFlag || !currentAppealId) return;
@@ -1097,7 +1088,7 @@
     }
 
     // ==========================
-    // START
+    // ISHGA TUSHIRISH
     // ==========================
     checkAdminStatus();
     console.log('Joriy user:', currentUser.id);
