@@ -497,29 +497,40 @@
     // ADMINLIKNI TEKSHIRISH
     // ==========================
     async function checkAdminStatus() {
-        try {
-            const response = await fetch('/api/check-admin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUser.id })
-            });
-            const data = await response.json();
-            isAdminFlag = data.isAdmin;
-        } catch (err) {
-            console.error('Admin status tekshirishda xatolik:', err);
-            isAdminFlag = false;
-        }
-        const badge = document.getElementById('adminBadge');
-        if (isAdminFlag) badge.style.display = 'inline-block';
-        else badge.style.display = 'none';
-
-        setupNavigation();
-        if (isAdminFlag) {
-            navigateTo('adminDashboard');
-        } else {
-            navigateTo('userHome');
-        }
+    try {
+        const response = await fetch('/api/check-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id })
+        });
+        const data = await response.json();
+        isAdminFlag = data.isAdmin;
+    } catch (err) {
+        console.error('Admin status tekshirishda xatolik:', err);
+        isAdminFlag = false;
     }
+    const badge = document.getElementById('adminBadge');
+    if (isAdminFlag) badge.style.display = 'inline-block';
+    else badge.style.display = 'none';
+
+    setupNavigation();
+    
+    if (isAdminFlag) {
+        // start_param ni tekshirish
+        const startParam = tg.initDataUnsafe?.start_param;
+        if (startParam && startParam.startsWith('appeal_')) {
+            const appealId = parseInt(startParam.split('_')[1]);
+            if (appealId) {
+                // Murojaat tafsilotini ochish (adminAppealDetail sahifasiga o‘tadi)
+                setTimeout(() => openAppealDetail(appealId), 300);
+                return;
+            }
+        }
+        navigateTo('adminDashboard');
+    } else {
+        navigateTo('userHome');
+    }
+}
 
     // ==========================
     // NAVIGATSION
