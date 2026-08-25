@@ -1,27 +1,43 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const DATA_FILE = path.join(__dirname, 'data.json');
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
-
-// ----- MA'LUMOTLAR (vaqtinchalik xotira) -----
-let appeals = [];
-let nextId = 1;
-
-// ----- ADMIN ID (faqat shu ID admin) -----
-const ADMIN_IDS = [7117334799, 8893381144];
-
-// ----- TELEGRAM XABAR YUBORISH -----
-async function sendTelegramMessage(chatId, text) {
-    if (!BOT_TOKEN) {
-        console.error('BOT_TOKEN sozlanmagan!');
-        return false;
+// ----- Ma'lumotlarni fayldan o'qish va yozish -----
+function loadAppeals() {
+    try {
+        if (fs.existsSync(DATA_FILE)) {
+            const data = fs.readFileSync(DATA_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (err) {
+        console.error('Faylni o\'qishda xatolik:', err);
     }
+    return [];
+}
+
+function saveAppeals(appeals) {
+    try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(appeals, null, 2));
+    } catch (err) {
+        console.error('Faylni yozishda xatolik:', err);
+    }
+}
+
+let appeals = loadAppeals();
+let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
+
+// ----- ADMIN ID LAR -----
+const ADMIN_IDS = [7117334799]; // Qo'shimcha admin ID larini qo'shishingiz mumkin
+
+// ----- Telegram xabar yuborish -----
+async function sendTelegramMessage(chatId, text) {
+    if (!BOT_TOKEN) return false;
     try {
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         const response = await fetch(url, {
@@ -36,6 +52,10 @@ async function sendTelegramMessage(chatId, text) {
         return false;
     }
 }
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.static('public'));
 
 // ----- API: FOYDALANUVCHI -----
 app.get('/api/appeals', (req, res) => {
@@ -61,6 +81,7 @@ app.post('/api/appeals', (req, res) => {
         responseDate: null
     };
     appeals.push(newAppeal);
+    saveAppeals(appeals);
     res.status(201).json(newAppeal);
 });
 
@@ -81,6 +102,7 @@ app.put('/api/admin/appeals/:id', (req, res) => {
         appeals[index].adminResponse = adminResponse;
         appeals[index].responseDate = new Date().toISOString();
     }
+    saveAppeals(appeals);
     res.json(appeals[index]);
 });
 
@@ -91,6 +113,7 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
         return res.status(404).json({ error: 'Murojaat topilmadi' });
     }
     appeals.splice(index, 1);
+    saveAppeals(appeals);
     res.status(204).send();
 });
 
@@ -111,6 +134,13 @@ app.post('/api/admin/notify', async (req, res) => {
     } else {
         res.status(500).json({ error: 'Xabar yuborishda xatolik' });
     }
+});
+
+// ----- ADMINLIKNI TEKSHIRISH -----
+app.post('/api/check-admin', (req, res) => {
+    const { userId } = req.body;
+    const isAdmin = ADMIN_IDS.includes(Number(userId));
+    res.json({ isAdmin });
 });
 
 // ----- FRONTEND -----
