@@ -7,57 +7,63 @@ const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const DATA_FILE = path.join(__dirname, 'data.json');
+const USERS_FILE = path.join(__dirname, 'users.json');
 
 // ----- Ma'lumotlarni fayldan o'qish va yozish -----
 function loadAppeals() {
     try {
         if (fs.existsSync(DATA_FILE)) {
-            const data = fs.readFileSync(DATA_FILE, 'utf8');
-            return JSON.parse(data);
+            return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
         }
-    } catch (err) {
-        console.error('Faylni o\'qishda xatolik:', err);
-    }
+    } catch (err) { console.error('Appeals yuklash xatolik:', err); }
     return [];
 }
 
 function saveAppeals(appeals) {
     try {
         fs.writeFileSync(DATA_FILE, JSON.stringify(appeals, null, 2));
-    } catch (err) {
-        console.error('Faylni yozishda xatolik:', err);
-    }
+    } catch (err) { console.error('Appeals saqlash xatolik:', err); }
+}
+
+function loadUsers() {
+    try {
+        if (fs.existsSync(USERS_FILE)) {
+            return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        }
+    } catch (err) { console.error('Users yuklash xatolik:', err); }
+    return [];
+}
+
+function saveUsers(users) {
+    try {
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    } catch (err) { console.error('Users saqlash xatolik:', err); }
 }
 
 let appeals = loadAppeals();
+let users = loadUsers();
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 
 // ----- ADMIN ID LAR -----
-const ADMIN_IDS = [7117334799]; // Qo'shimcha admin ID larini qo'shishingiz mumkin
+const ADMIN_IDS = [7117334799];
 
-// ----- Telegram xabar yuborish (yaxshilangan) -----
+// ----- Telegram xabar yuborish -----
 async function sendTelegramMessage(chatId, text) {
     if (!BOT_TOKEN) {
-        console.error('❌ BOT_TOKEN sozlanmagan!');
+        console.error('BOT_TOKEN sozlanmagan!');
         return false;
     }
     try {
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-        console.log(`📤 Telegram xabar yuborilmoqda: chatId=${chatId}`);
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: chatId, text: text })
         });
         const data = await response.json();
-        if (!data.ok) {
-            console.error('❌ Telegram API xatolik:', data);
-        } else {
-            console.log('✅ Telegram xabar muvaffaqiyatli yuborildi');
-        }
         return data.ok === true;
     } catch (err) {
-        console.error('❌ Telegram xabar yuborish xatolik:', err);
+        console.error('Telegram xabar yuborish xatolik:', err);
         return false;
     }
 }
@@ -65,6 +71,42 @@ async function sendTelegramMessage(chatId, text) {
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
+
+// ==========================
+//  WEBHOOK (Telegram dan kelgan xabarlar)
+// ==========================
+app.post('/webhook', async (req, res) => {
+    const update = req.body;
+    console.log('📩 Webhook so‘rovi:', JSON.stringify(update, null, 2));
+
+    if (update.message && update.message.text === '/start') {
+        const chatId = update.message.chat.id;
+        const from = update.message.from;
+        const user = {
+            id: from.id,
+            firstName: from.first_name || '',
+            lastName: from.last_name || '',
+            username: from.username || '',
+            registeredAt: new Date().toISOString()
+        };
+
+        // Foydalanuvchini ro'yxatga olish (agar mavjud bo'lmasa)
+        const existing = users.find(u => u.id === user.id);
+        if (!existing) {
+            users.push(user);
+            saveUsers(users);
+            console.log(`✅ Yangi foydalanuvchi ro'yxatdan o'tdi: ${user.id} (${user.firstName})`);
+        } else {
+            console.log(`ℹ️ Foydalanuvchi allaqachon ro'yxatda: ${user.id}`);
+        }
+
+        // Xabar yuborish
+        const text = `Assalomu alaykum, ${user.firstName}! ✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz.\n\n📱 Ilovani ochish uchun pastdagi tugmani bosing va murojaat yuboring.`;
+        await sendTelegramMessage(chatId, text);
+    }
+
+    res.sendStatus(200);
+});
 
 // ----- API: FOYDALANUVCHI -----
 app.get('/api/appeals', (req, res) => {
@@ -126,9 +168,11 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
     res.status(204).send();
 });
 
-// ----- ADMIN JAVOB YOZGANDA XABAR YUBORISH (yaxshilangan) -----
+// ----- ADMIN JAVOB YOZGANDA XABAR YUBORISH -----
 app.post('/api/admin/notify', async (req, res) => {
+    console.log('📨 Notify so‘rovi keldi:', req.body);
     const { appealId, message } = req.body;
+    
     const appeal = appeals.find(a => a.id === appealId);
     if (!appeal) {
         return res.status(404).json({ error: 'Murojaat topilmadi' });
@@ -136,15 +180,17 @@ app.post('/api/admin/notify', async (req, res) => {
     if (!appeal.userId) {
         return res.status(400).json({ error: 'Foydalanuvchi ID si yo‘q' });
     }
+    
     if (!BOT_TOKEN) {
-        return res.status(500).json({ error: 'BOT_TOKEN sozlanmagan, xabar yuborib bo‘lmadi' });
+        return res.status(500).json({ error: 'BOT_TOKEN sozlanmagan' });
     }
+    
     const text = `📩 Sizning #${appealId} raqamli murojaatingizga javob berildi:\n\n${message}`;
     const sent = await sendTelegramMessage(appeal.userId, text);
     if (sent) {
         res.json({ success: true, message: 'Xabar yuborildi' });
     } else {
-        res.status(500).json({ error: 'Xabar yuborishda xatolik. Telegram loglarini tekshiring.' });
+        res.status(500).json({ error: 'Xabar yuborishda xatolik' });
     }
 });
 
@@ -164,7 +210,8 @@ app.listen(PORT, () => {
     console.log(`✅ Server ${PORT} portda ishga tushdi`);
     if (BOT_TOKEN) {
         console.log('🤖 Telegram bot ulangan');
+        console.log(`📡 Webhook URL: https://fvv-miniapp-backend-production.up.railway.app/webhook`);
     } else {
-        console.warn('⚠️ BOT_TOKEN sozlanmagan! Iltimos, Railway Variables ga qo\'shing.');
+        console.warn('⚠️ BOT_TOKEN sozlanmagan!');
     }
 });
