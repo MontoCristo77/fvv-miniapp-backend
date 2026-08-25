@@ -1,0 +1,24 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ma'lumotlar fayli (Railway'da ishlatiladi)
+data.json
+
+# Muhit o'zgaruvchilari
+.env
+
+# Tizim fayllari
+.DS_Store
+Thumbs.db
+
+# IDE fayllari
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
