@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* (stil avvalgidek, qisqartirib yozdim – to‘liq versiya yuqorida) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Roboto, sans-serif;
@@ -284,7 +283,6 @@
         .detail-section .label { font-weight: 600; color: #5a6b7a; font-size: 13px; }
         .detail-section .value { font-size: 15px; margin-top: 2px; }
         @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
-        /* qo'shimcha */
         .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .flex-row .btn-sm { width: auto; }
     </style>
@@ -301,7 +299,8 @@
 </header>
 
 <div class="container" id="appContainer">
-    <!-- USER SECTION (o'zgarishsiz) -->
+
+    <!-- USER HOME -->
     <div id="section-userHome" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-home"></i> Bosh sahifa</div>
@@ -317,6 +316,7 @@
         </div>
     </div>
 
+    <!-- USER NEW APPEAL -->
     <div id="section-userNewAppeal" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-pen-alt"></i> Yangi murojaat</div>
@@ -362,6 +362,7 @@
         </div>
     </div>
 
+    <!-- USER APPEALS -->
     <div id="section-userAppeals" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-list-ul"></i> Mening murojaatlarim</div>
@@ -369,7 +370,7 @@
         </div>
     </div>
 
-    <!-- ADMIN SECTION -->
+    <!-- ADMIN DASHBOARD -->
     <div id="section-adminDashboard" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-chart-pie"></i> Dashboard</div>
@@ -400,6 +401,7 @@
         <button class="btn btn-sm btn-outline" onclick="navigateTo('adminAppeals')"><i class="fas fa-list"></i> Barcha murojaatlarni ko‘rish</button>
     </div>
 
+    <!-- ADMIN APPEALS -->
     <div id="section-adminAppeals" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-tasks"></i> Barcha murojaatlar</div>
@@ -416,12 +418,12 @@
         </div>
     </div>
 
+    <!-- ADMIN APPEAL DETAIL -->
     <div id="section-adminAppealDetail" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-info-circle"></i> Murojaat tafsilotlari</div>
             <div id="appealDetailContent"></div>
             <hr style="margin:16px 0; border-color:var(--primary-border);">
-            <!-- MUDDATNI UZAYTIRISH -->
             <div class="form-group">
                 <label>📅 Muddatni uzaytirish</label>
                 <div class="flex-row">
@@ -496,7 +498,7 @@
     document.getElementById('userName').textContent = currentUser.firstName + ' ' + currentUser.lastName;
 
     // ==========================
-    // ADMINLIKNI TEKSHIRISH
+    // ADMIN STATUS
     // ==========================
     async function checkAdminStatus() {
         try {
@@ -524,7 +526,7 @@
     }
 
     // ==========================
-    // NAVIGATSION
+    // NAVIGATION
     // ==========================
     function setupNavigation() {
         const admin = isAdminFlag;
@@ -571,46 +573,43 @@
         if (sectionId === 'adminAppeals') renderAdminAppeals();
         if (sectionId === 'userHome') renderNotifications();
         if (sectionId === 'adminAppealDetail') {
-            // detail already rendered by openAppealDetail
+            // detail already rendered
         }
     }
 
     // ==========================
-    // API SO'ROVLARI
+    // API FETCH (tuzatilgan)
     // ==========================
     const API_BASE = '/api';
 
-   async function apiFetch(endpoint, options = {}) {
-    const response = await fetch(API_BASE + endpoint, {
-        headers: { 'Content-Type': 'application/json' },
-        ...options
-    });
-    if (!response.ok) {
-        // Xatolik matnini olishga harakat qilamiz
-        let errorMessage = 'Xatolik yuz berdi';
-        try {
-            const errData = await response.json();
-            if (errData.error) errorMessage = errData.error;
-        } catch {
-            // Agar JSON bo'lmasa, status matnini olamiz
-            errorMessage = response.statusText || `Server ${response.status} xatolik`;
+    async function apiFetch(endpoint, options = {}) {
+        const response = await fetch(API_BASE + endpoint, {
+            headers: { 'Content-Type': 'application/json' },
+            ...options
+        });
+        if (!response.ok) {
+            let errorMessage = 'Xatolik yuz berdi';
+            try {
+                const errData = await response.json();
+                errorMessage = errData.error || errorMessage;
+            } catch {
+                errorMessage = response.statusText || `Server ${response.status} xatolik`;
+            }
+            throw new Error(errorMessage);
         }
-        throw new Error(errorMessage);
+        const contentLength = response.headers.get('content-length');
+        if (contentLength && parseInt(contentLength) === 0) {
+            return null;
+        }
+        try {
+            return await response.json();
+        } catch {
+            return null;
+        }
     }
-    // Agar javob body bo'sh bo'lsa, null qaytar
-    const contentLength = response.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) === 0) {
-        return null;
-    }
-    try {
-        return await response.json();
-    } catch {
-        return null;
-    }
-}
 
     // ==========================
-    // XABARNOMALAR
+    // NOTIFICATIONS
     // ==========================
     async function renderNotifications() {
         try {
@@ -641,9 +640,10 @@
     }
 
     // ==========================
-    // YANGI MUROJAAT (avvalgidek)
+    // NEW APPEAL
     // ==========================
     let selectedFile = null;
+
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -652,11 +652,13 @@
             document.getElementById('filePreview').style.display = 'flex';
         }
     });
+
     function removeFile() {
         selectedFile = null;
         document.getElementById('fileInput').value = '';
         document.getElementById('filePreview').style.display = 'none';
     }
+
     document.getElementById('appealForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         if (isAdminFlag) {
@@ -707,7 +709,7 @@
     });
 
     // ==========================
-    // FOYDALANUVCHI MUROJAATLARI (avvalgidek)
+    // USER APPEALS
     // ==========================
     async function renderUserAppeals() {
         if (isAdminFlag) return;
@@ -761,7 +763,7 @@
     }
 
     // ==========================
-    // ADMIN DASHBOARD (avvalgidek)
+    // ADMIN DASHBOARD
     // ==========================
     let chartInstance = null, chartDoughnut = null;
     async function renderAdminDashboard() {
@@ -853,7 +855,7 @@
     }
 
     // ==========================
-    // ADMIN MUROJAATLAR RO'YXATI (qidiruv, filtr, o'chirish tugmasi)
+    // ADMIN APPEALS LIST
     // ==========================
     let allAppealsCache = [];
 
@@ -917,95 +919,96 @@
     }
 
     // ==========================
-    // O'CHIRISH FUNKSIYASI (ro'yxatda)
+    // DELETE APPEAL (to‘g‘ridan-to‘g‘ri fetch)
     // ==========================
-   async function deleteAppeal(appealId) {
-    if (!isAdminFlag) return;
-    tg.showPopup({
-        title: 'Tasdiqlang',
-        message: `#${appealId} raqamli murojaatni o‘chirishni xohlaysizmi?`,
-        buttons: [
-            { type: 'destructive', text: 'Ha, o‘chirish', id: 'confirm' },
-            { type: 'cancel', text: 'Bekor qilish' }
-        ]
-    }, async (btnId) => {
-        if (btnId === 'confirm') {
-            try {
-                const response = await fetch('/api/admin/appeals/' + appealId, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                if (response.ok) {
-                    tg.showPopup({ title: 'Bajarildi', message: 'Murojaat o‘chirildi!', buttons: [{ type: 'ok' }] });
-                    renderAdminAppeals();
-                } else {
-                    let errorMsg = 'O‘chirishda xatolik';
-                    try {
-                        const err = await response.json();
-                        if (err.error) errorMsg = err.error;
-                    } catch {}
-                    tg.showPopup({ title: 'Xatolik', message: errorMsg, buttons: [{ type: 'ok' }] });
+    async function deleteAppeal(appealId) {
+        if (!isAdminFlag) return;
+        tg.showPopup({
+            title: 'Tasdiqlang',
+            message: `#${appealId} raqamli murojaatni o‘chirishni xohlaysizmi?`,
+            buttons: [
+                { type: 'destructive', text: 'Ha, o‘chirish', id: 'confirm' },
+                { type: 'cancel', text: 'Bekor qilish' }
+            ]
+        }, async (btnId) => {
+            if (btnId === 'confirm') {
+                try {
+                    const response = await fetch('/api/admin/appeals/' + appealId, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (response.ok) {
+                        tg.showPopup({ title: 'Bajarildi', message: 'Murojaat o‘chirildi!', buttons: [{ type: 'ok' }] });
+                        renderAdminAppeals();
+                    } else {
+                        let errorMsg = 'O‘chirishda xatolik';
+                        try {
+                            const err = await response.json();
+                            errorMsg = err.error || errorMsg;
+                        } catch {}
+                        tg.showPopup({ title: 'Xatolik', message: errorMsg, buttons: [{ type: 'ok' }] });
+                    }
+                } catch (err) {
+                    tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
                 }
-            } catch (err) {
-                tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
             }
-        }
-    });
-}
+        });
+    }
 
-    // ==========================
-    // O'CHIRISH (tafsilot sahifasidan)
-    // ==========================
     async function deleteAppealFromDetail() {
         if (!isAdminFlag || !currentAppealId) return;
         deleteAppeal(currentAppealId);
     }
 
     // ==========================
-    // MUDDATNI UZAYTIRISH
+    // EXTEND DEADLINE (to‘g‘ridan-to‘g‘ri fetch)
     // ==========================
     async function extendDeadline() {
-    if (!isAdminFlag || !currentAppealId) return;
-    const days = parseInt(document.getElementById('extendDays').value);
-    if (!days || days < 1) {
-        tg.showPopup({
-            title: 'Xatolik',
-            message: 'Iltimos, to‘g‘ri kunlar sonini kiriting (min 1).',
-            buttons: [{ type: 'ok' }]
-        });
-        return;
-    }
-    try {
-        const response = await fetch('/api/admin/appeals/' + currentAppealId + '/extend', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ days })
-        });
-        if (response.ok) {
+        if (!isAdminFlag || !currentAppealId) return;
+        const days = parseInt(document.getElementById('extendDays').value);
+        if (!days || days < 1) {
             tg.showPopup({
-                title: 'Bajarildi',
-                message: `Muddat ${days} kunga uzaytirildi!`,
+                title: 'Xatolik',
+                message: 'Iltimos, to‘g‘ri kunlar sonini kiriting (min 1).',
                 buttons: [{ type: 'ok' }]
             });
-            // Ma'lumotlarni yangilash
-            openAppealDetail(currentAppealId);
-            renderAdminAppeals();
-            renderAdminDashboard();
-        } else {
-            let errorMsg = 'Muddat uzaytirishda xatolik';
-            try {
-                const err = await response.json();
-                if (err.error) errorMsg = err.error;
-            } catch {}
-            tg.showPopup({ title: 'Xatolik', message: errorMsg, buttons: [{ type: 'ok' }] });
+            return;
         }
-    } catch (err) {
-        tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{ type: 'ok' }] });
+        try {
+            const response = await fetch('/api/admin/appeals/' + currentAppealId + '/extend', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                tg.showPopup({
+                    title: 'Bajarildi',
+                    message: `Muddat ${days} kunga uzaytirildi!`,
+                    buttons: [{ type: 'ok' }]
+                });
+                // Refresh detail
+                await openAppealDetail(currentAppealId);
+                await renderAdminAppeals();
+                await renderAdminDashboard();
+            } else {
+                tg.showPopup({
+                    title: 'Xatolik',
+                    message: data.error || 'Muddat uzaytirishda xatolik',
+                    buttons: [{ type: 'ok' }]
+                });
+            }
+        } catch (err) {
+            tg.showPopup({
+                title: 'Xatolik',
+                message: err.message || 'Tarmoq xatoligi',
+                buttons: [{ type: 'ok' }]
+            });
+        }
     }
-}
 
     // ==========================
-    // MUROJAAT TAFSILOTI (admin) – bo‘limlarga ajratilgan, o'chirish va uzaytirish tugmalari
+    // APPEAL DETAIL
     // ==========================
     let currentAppealId = null;
 
@@ -1054,7 +1057,6 @@
                 ${fileHtml ? `<div class="detail-section"><div class="label">📎 Fayl</div><div class="value">${fileHtml}</div></div>` : ''}
                 ${appeal.adminResponse ? `<div class="detail-section"><div class="label">💬 Admin javobi</div><div class="value" style="background:var(--primary-bg); padding:8px; border-radius:8px;">${appeal.adminResponse}</div></div>` : ''}
             `;
-            // Joriy muddatni ko'rsatish
             document.getElementById('currentDeadlineDisplay').textContent = new Date(appeal.deadline).toLocaleDateString();
             document.getElementById('adminResponseText').value = appeal.adminResponse || '';
             navigateTo('adminAppealDetail');
@@ -1064,7 +1066,7 @@
     }
 
     // ==========================
-    // JAVOB YUBORISH (admin)
+    // SUBMIT ADMIN RESPONSE
     // ==========================
     async function submitAdminResponse() {
         if (!isAdminFlag || !currentAppealId) return;
@@ -1095,7 +1097,7 @@
     }
 
     // ==========================
-    // ISHGA TUSHIRISH
+    // START
     // ==========================
     checkAdminStatus();
     console.log('Joriy user:', currentUser.id);
