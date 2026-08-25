@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const BOT_USERNAME = process.env.BOT_USERNAME || 'sirdaryoFVBgamurojaat_bot';
+const BOT_USERNAME = process.env.BOT_USERNAME || 'SirdaryoFVBgamurojaat_bot';
 
 console.log('🔍 BOT_TOKEN mavjudmi?', BOT_TOKEN ? 'HA' : 'YO\'Q');
 console.log('🤖 BOT_USERNAME:', BOT_USERNAME);
