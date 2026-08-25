@@ -125,6 +125,32 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
     res.status(204).send();
 });
 
+// ----- MUDDATNI UZAYTIRISH (xatoliklarni logga chiqaradi) -----
+app.put('/api/admin/appeals/:id/extend', (req, res) => {
+    console.log('📥 Extend so‘rovi keldi:', req.params.id, req.body);
+    const id = parseInt(req.params.id);
+    const { days } = req.body;
+    if (!days || days < 1) {
+        console.log('❌ Kunlar soni xato:', days);
+        return res.status(400).json({ error: 'Kunlar soni to‘g‘ri emas (min 1)' });
+    }
+    const index = appeals.findIndex(a => a.id === id);
+    if (index === -1) {
+        console.log('❌ Murojaat topilmadi:', id);
+        return res.status(404).json({ error: 'Murojaat topilmadi' });
+    }
+    if (appeals[index].status === 'resolved') {
+        console.log('❌ Hal qilingan murojaat:', id);
+        return res.status(400).json({ error: 'Hal qilingan murojaat muddatini uzaytirib bo‘lmaydi' });
+    }
+    const currentDeadline = new Date(appeals[index].deadline);
+    currentDeadline.setDate(currentDeadline.getDate() + days);
+    appeals[index].deadline = currentDeadline.toISOString();
+    saveJSON(DATA_FILE, appeals);
+    console.log('✅ Muddat yangilandi:', appeals[index].deadline);
+    res.json(appeals[index]);
+});
+
 app.post('/api/admin/notify', async (req, res) => {
     const { appealId, message } = req.body;
     const appeal = appeals.find(a => a.id === appealId);

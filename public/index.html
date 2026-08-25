@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* === GLOBAL STYLES === */
+        /* (stil avvalgidek, qisqartirib yozdim, to‘liq versiya faylda bo‘lishi kerak) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Roboto, sans-serif;
@@ -909,7 +909,7 @@
     }
 
     // ==========================
-    // O'CHIRISH FUNKSIYASI (to‘g‘rilangan)
+    // O'CHIRISH (tuzatilgan)
     // ==========================
     async function deleteAppeal(appealId) {
         if (!isAdminFlag) return;
@@ -929,8 +929,8 @@
                     });
                     if (response.ok) {
                         tg.showPopup({ title: 'Bajarildi', message: 'Murojaat o‘chirildi!', buttons: [{ type: 'ok' }] });
-                        renderAdminAppeals();
-                        renderAdminDashboard();
+                        await renderAdminAppeals();
+                        await renderAdminDashboard();
                     } else {
                         let errorMsg = 'O‘chirishda xatolik';
                         try {
@@ -952,7 +952,7 @@
     }
 
     // ==========================
-    // MUDDATNI UZAYTIRISH (to‘g‘rilangan)
+    // MUDDATNI UZAYTIRISH (tuzatilgan – HTML xatolikni ushlaydi)
     // ==========================
     async function extendDeadline() {
         if (!isAdminFlag || !currentAppealId) return;
@@ -971,8 +971,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ days })
             });
-            const data = await response.json();
+            const text = await response.text(); // avval matn sifatida olamiz
             if (response.ok) {
+                let data;
+                try { data = JSON.parse(text); } catch { data = {}; }
                 tg.showPopup({
                     title: 'Bajarildi',
                     message: `Muddat ${days} kunga uzaytirildi!`,
@@ -983,9 +985,20 @@
                 await renderAdminAppeals();
                 await renderAdminDashboard();
             } else {
+                let errorMsg = 'Muddat uzaytirishda xatolik';
+                try {
+                    const data = JSON.parse(text);
+                    errorMsg = data.error || errorMsg;
+                } catch {
+                    if (text.includes('<!DOCTYPE')) {
+                        errorMsg = 'Server xatolik yuz berdi. Iltimos, keyinroq urinib ko\'ring.';
+                    } else {
+                        errorMsg = text || errorMsg;
+                    }
+                }
                 tg.showPopup({
                     title: 'Xatolik',
-                    message: data.error || 'Muddat uzaytirishda xatolik',
+                    message: errorMsg,
                     buttons: [{ type: 'ok' }]
                 });
             }
