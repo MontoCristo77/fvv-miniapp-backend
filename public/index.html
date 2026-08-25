@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>FVV Xizmati</title>
+    <title>Sirdaryo FVB boshlig'iga murojaat</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* ----- GLOBAL ----- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Roboto, sans-serif;
@@ -22,8 +23,10 @@
             --primary-border: #D4E4F7;
             --danger: #e74c3c;
             --success: #27ae60;
+            --warning: #f39c12;
             --shadow: 0 2px 12px rgba(44, 111, 187, 0.15);
             --radius: 12px;
+            --text-dark: #1a2a3a;
         }
         .container { max-width: 480px; margin: 0 auto; padding: 16px; }
         .app-header {
@@ -36,7 +39,7 @@
             justify-content: space-between;
             box-shadow: var(--shadow);
         }
-        .app-header h1 { font-size: 20px; font-weight: 700; }
+        .app-header h1 { font-size: 18px; font-weight: 700; }
         .app-header .user-badge {
             background: rgba(255,255,255,0.2);
             padding: 6px 12px;
@@ -78,7 +81,7 @@
         .bottom-nav .nav-item.hidden { display: none; }
         .bottom-nav .nav-item.user-name {
             pointer-events: none;
-            color: #1a2a3a;
+            color: var(--text-dark);
             font-weight: 500;
             font-size: 13px;
             max-width: 120px;
@@ -104,9 +107,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #1a2a3a;
+            color: var(--text-dark);
         }
         .card-title i { color: var(--primary); }
+        .text-dark { color: var(--text-dark); }
         .badge {
             display: inline-block;
             padding: 3px 10px;
@@ -131,8 +135,18 @@
         }
         .stat-item .number { font-size: 28px; font-weight: 700; color: var(--primary-dark); }
         .stat-item .label { font-size: 13px; color: #5a6b7a; }
+        .stat-item .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .stat-item.danger .number { color: var(--danger); }
+        .stat-item.success .number { color: var(--success); }
+        .stat-item.warning .number { color: var(--warning); }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #1a2a3a; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text-dark);
+        }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px 12px;
@@ -140,6 +154,7 @@
             border-radius: 8px;
             font-size: 14px;
             background: #fafcff;
+            color: var(--text-dark);
         }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             border-color: var(--primary);
@@ -171,6 +186,7 @@
             align-items: center;
             gap: 8px;
             border: 1px solid var(--primary-border);
+            color: var(--text-dark);
         }
         .btn {
             background: var(--primary);
@@ -202,6 +218,7 @@
             border-radius: 0 var(--radius) var(--radius) 0;
             border: 1px solid var(--primary-border);
             border-left-width: 4px;
+            color: var(--text-dark);
         }
         .appeal-item .meta {
             display: flex;
@@ -214,32 +231,75 @@
         .appeal-item .deadline.urgent { color: var(--danger); }
         .appeal-item .deadline.ok { color: var(--success); }
         .chart-container { height: 200px; margin-top: 10px; }
+        .chart-row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .chart-row .chart-box { flex: 1; min-width: 140px; }
+        .notification-item {
+            background: var(--primary-bg);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--primary);
+            color: var(--text-dark);
+        }
+        .notification-item .time {
+            font-size: 12px;
+            color: #5a6b7a;
+            margin-top: 4px;
+        }
+        .admin-badge {
+            background: #f1c40f;
+            color: #1a2a3a;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 6px;
+        }
+        .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .filter-row input, .filter-row select {
+            padding: 8px 12px;
+            border: 1px solid var(--primary-border);
+            border-radius: 8px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 120px;
+        }
+        .detail-section {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--primary-border);
+        }
+        .detail-section:last-child { border-bottom: none; }
+        .detail-section .label { font-weight: 600; color: #5a6b7a; font-size: 13px; }
+        .detail-section .value { font-size: 15px; margin-top: 2px; }
         @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
 
 <header class="app-header">
-    <h1><i class="fas fa-shield-alt"></i> FVV Xizmati</h1>
+    <h1><i class="fas fa-shield-alt"></i> Sirdaryo FVB boshlig'iga murojaat</h1>
     <div class="user-badge" id="userBadge">
         <i class="fas fa-user"></i>
         <span id="userName">Yuklanmoqda...</span>
+        <span class="admin-badge" id="adminBadge" style="display:none;">👑 Admin</span>
     </div>
 </header>
 
 <div class="container" id="appContainer">
-    <!-- USER SECTION -->
+    <!-- USER SECTION (o'zgarishsiz) -->
     <div id="section-userHome" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-home"></i> Bosh sahifa</div>
-            <p>Xush kelibsiz! Quyidagi menyu orqali murojaat yuborishingiz yoki murojaatlaringiz holatini ko‘rishingiz mumkin.</p>
+            <p class="text-dark">Xush kelibsiz! Quyidagi menyu orqali murojaat yuborishingiz yoki murojaatlaringiz holatini ko‘rishingiz mumkin.</p>
             <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
                 <button class="btn btn-sm" onclick="navigateTo('userNewAppeal')"><i class="fas fa-plus-circle"></i> Yangi murojaat</button>
                 <button class="btn btn-sm btn-outline" onclick="navigateTo('userAppeals')"><i class="fas fa-list"></i> Murojaatlarim</button>
             </div>
         </div>
         <div class="card">
-            <div class="card-title"><i class="fas fa-bell"></i> So‘nggi xabarnoma</div>
+            <div class="card-title"><i class="fas fa-bell"></i> So‘nggi xabarnomalar</div>
             <div id="userNotification">Hozircha xabarnoma yo‘q.</div>
         </div>
     </div>
@@ -296,19 +356,58 @@
         </div>
     </div>
 
-    <!-- ADMIN SECTION -->
+    <!-- ========== ADMIN SECTION (to‘liq yangilangan) ========== -->
     <div id="section-adminDashboard" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-chart-pie"></i> Dashboard</div>
+            <!-- Statistik kartochkalar -->
             <div class="stat-grid" id="statsGrid">
-                <div class="stat-item primary"><div class="number" id="statTotal">0</div><div class="label">Jami murojaat</div></div>
-                <div class="stat-item danger"><div class="number" id="statPending">0</div><div class="label">Kutilayotgan</div></div>
-                <div class="stat-item success"><div class="number" id="statResolved">0</div><div class="label">Hal qilingan</div></div>
-                <div class="stat-item"><div class="number" id="statToday">0</div><div class="label">Bugun kelgan</div></div>
+                <div class="stat-item primary">
+                    <span class="icon">📦</span>
+                    <div class="number" id="statTotal">0</div>
+                    <div class="label">Jami murojaat</div>
+                </div>
+                <div class="stat-item warning">
+                    <span class="icon">⏳</span>
+                    <div class="number" id="statPending">0</div>
+                    <div class="label">Kutilayotgan</div>
+                </div>
+                <div class="stat-item success">
+                    <span class="icon">✅</span>
+                    <div class="number" id="statResolved">0</div>
+                    <div class="label">Hal qilingan</div>
+                </div>
+                <div class="stat-item">
+                    <span class="icon">📅</span>
+                    <div class="number" id="statToday">0</div>
+                    <div class="label">Bugun kelgan</div>
+                </div>
             </div>
+            <!-- Muddati o‘tgan kartochka -->
+            <div style="margin-top:12px; background:#fde8e8; border:1px solid var(--danger); border-radius:var(--radius); padding:12px; display:flex; align-items:center; gap:12px;">
+                <span style="font-size:28px;">🚨</span>
+                <div>
+                    <div style="font-weight:700; font-size:18px; color:var(--danger);" id="statOverdue">0</div>
+                    <div style="font-size:13px; color:#5a6b7a;">Muddati o‘tgan murojaat</div>
+                </div>
+            </div>
+            <!-- Grafiklar qatori -->
+            <div class="chart-row" style="margin-top:16px;">
+                <div class="chart-box">
+                    <canvas id="statsChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="statsChartDoughnut"></canvas>
+                </div>
+            </div>
+            <!-- Turlar va tuzilmalar teglari -->
             <div style="margin-top:8px;"><label>Turlar bo‘yicha:</label><div id="typeStats" style="font-size:14px;display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div></div>
             <div style="margin-top:8px;"><label>Tuzilmalar bo‘yicha:</label><div id="regionStats" style="font-size:14px;display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div></div>
-            <div class="chart-container"><canvas id="statsChart"></canvas></div>
+            <!-- So‘nggi 5 ta murojaat -->
+            <div style="margin-top:16px;">
+                <div class="card-title" style="font-size:14px;"><i class="fas fa-clock"></i> So‘nggi murojaatlar</div>
+                <div id="recentAppealsList"></div>
+            </div>
         </div>
         <button class="btn btn-sm btn-outline" onclick="navigateTo('adminAppeals')"><i class="fas fa-list"></i> Barcha murojaatlarni ko‘rish</button>
     </div>
@@ -316,6 +415,16 @@
     <div id="section-adminAppeals" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-tasks"></i> Barcha murojaatlar</div>
+            <!-- Qidiruv va filtr -->
+            <div class="filter-row">
+                <input type="text" id="appealSearch" placeholder="🔍 Qidirish (ID, F.I.SH, tuzilma)" oninput="filterAppeals()">
+                <select id="appealFilter" onchange="filterAppeals()">
+                    <option value="all">Barcha holat</option>
+                    <option value="pending">Kutilayotgan</option>
+                    <option value="in_progress">Jarayonda</option>
+                    <option value="resolved">Hal qilingan</option>
+                </select>
+            </div>
             <div id="adminAppealsList">Yuklanmoqda...</div>
         </div>
     </div>
@@ -329,7 +438,7 @@
                 <label>Javob matni</label>
                 <textarea id="adminResponseText" placeholder="Javobingizni yozing..." rows="4"></textarea>
             </div>
-            <button class="btn btn-success" onclick="submitAdminResponse()"><i class="fas fa-reply"></i> Javob yuborish</button>
+            <button class="btn btn-success" onclick="submitAdminResponse()"><i class="fas fa-reply"></i> Hal qilish va javob yuborish</button>
             <button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="navigateTo('adminAppeals')">◀ Orqaga</button>
         </div>
     </div>
@@ -402,6 +511,11 @@
             console.error('Admin status tekshirishda xatolik:', err);
             isAdminFlag = false;
         }
+        // Admin badge
+        const badge = document.getElementById('adminBadge');
+        if (isAdminFlag) badge.style.display = 'inline-block';
+        else badge.style.display = 'none';
+
         setupNavigation();
         if (isAdminFlag) {
             navigateTo('adminDashboard');
@@ -456,6 +570,7 @@
         if (sectionId === 'userAppeals') renderUserAppeals();
         if (sectionId === 'adminDashboard') renderAdminDashboard();
         if (sectionId === 'adminAppeals') renderAdminAppeals();
+        if (sectionId === 'userHome') renderNotifications();
     }
 
     // ==========================
@@ -473,6 +588,37 @@
             throw new Error(err.error || 'Xatolik yuz berdi');
         }
         return response.json();
+    }
+
+    // ==========================
+    //  XABARNOMALAR
+    // ==========================
+    async function renderNotifications() {
+        try {
+            const allAppeals = await apiFetch('/appeals');
+            const myAppeals = allAppeals.filter(a => a.userId === currentUser.id && a.adminResponse);
+            const container = document.getElementById('userNotification');
+            if (!myAppeals.length) {
+                container.innerHTML = 'Hozircha xabarnoma yo‘q.';
+                return;
+            }
+            let html = '';
+            myAppeals.sort((a, b) => new Date(b.responseDate) - new Date(a.responseDate));
+            myAppeals.forEach(a => {
+                const hasFile = a.file ? '<i class="fas fa-paperclip"></i> 1 fayl' : '';
+                html += `
+                    <div class="notification-item">
+                        <div><strong>#${a.id}</strong> - ${a.type} (${a.region})</div>
+                        <div style="margin-top:4px;">${a.adminResponse}</div>
+                        <div style="margin-top:2px; font-size:13px; color:#5a6b7a;">${hasFile}</div>
+                        <div class="time">${new Date(a.responseDate).toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (err) {
+            console.error('Xabarnomalarni yuklashda xatolik:', err);
+        }
     }
 
     // ==========================
@@ -549,7 +695,7 @@
     });
 
     // ==========================
-    //  FOYDALANUVCHI MUROJAATLARI
+    //  FOYDALANUVCHI MUROJAATLARI (15 kunlik hisoblagich)
     // ==========================
     async function renderUserAppeals() {
         if (isAdminFlag) return;
@@ -559,7 +705,7 @@
             const allAppeals = await apiFetch('/appeals');
             const myAppeals = allAppeals.filter(a => a.userId === currentUser.id);
             if (!myAppeals.length) {
-                container.innerHTML = '<p>Siz hali murojaat yubormagansiz.</p>';
+                container.innerHTML = '<p class="text-dark">Siz hali murojaat yubormagansiz.</p>';
                 return;
             }
             let html = '';
@@ -569,38 +715,46 @@
                     a.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
                 const badgeClass = a.status === 'pending' ? 'badge-pending' :
                     a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
-                const now = new Date();
-                const deadline = new Date(a.deadline);
-                const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
-                let deadlineHtml =
-                    `<span class="deadline ${daysLeft < 0 ? 'urgent' : 'ok'}">${daysLeft < 0 ? 'Muddat o‘tgan!' : daysLeft + ' kun qoldi'}</span>`;
+                
+                let deadlineHtml = '';
+                if (a.status !== 'resolved') {
+                    const now = new Date();
+                    const deadline = new Date(a.deadline);
+                    const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+                    deadlineHtml = `<span class="deadline ${daysLeft < 0 ? 'urgent' : 'ok'}">${daysLeft < 0 ? 'Muddat o‘tgan!' : daysLeft + ' kun qoldi'}</span>`;
+                } else {
+                    deadlineHtml = `<span class="deadline ok">✅ Hal qilingan</span>`;
+                }
+
+                const hasFile = a.file ? '<i class="fas fa-paperclip"></i> 1 fayl' : '';
                 html += `
                     <div class="appeal-item">
                         <div><strong>#${a.id}</strong> - ${a.type} (${a.region})</div>
-                        <div style="font-size:13px; margin-top:4px;">${a.description.substring(0,60)}${a.description.length>60?'...':''}</div>
+                        <div style="font-size:13px; margin-top:4px;">${a.description}</div>
                         <div class="meta">
                             <span><span class="badge ${badgeClass}">${statusLabel}</span></span>
                             <span>${deadlineHtml}</span>
                         </div>
                         <div class="meta">
                             <span>Yuborilgan: ${new Date(a.createdAt).toLocaleDateString()}</span>
-                            ${a.file ? `<span><i class="fas fa-paperclip"></i> 1 fayl</span>` : ''}
+                            <span>${hasFile}</span>
                         </div>
-                        ${a.adminResponse ? `<div style="margin-top:6px; background:var(--primary-bg); padding:8px; border-radius:8px; font-size:13px; border-left:3px solid var(--primary);"><strong>Javob:</strong> ${a.adminResponse}</div>` : ''}
+                        ${a.adminResponse ? `<div style="margin-top:6px; background:var(--primary-bg); padding:8px; border-radius:8px; font-size:13px; border-left:3px solid var(--primary); color:var(--text-dark);"><strong>Javob:</strong> ${a.adminResponse}</div>` : ''}
                     </div>
                 `;
             });
             container.innerHTML = html;
         } catch (err) {
-            container.innerHTML = '<p>Xatolik yuz berdi. Qayta urinib ko‘ring.</p>';
+            container.innerHTML = '<p class="text-dark">Xatolik yuz berdi. Qayta urinib ko‘ring.</p>';
             console.error(err);
         }
     }
 
     // ==========================
-    //  ADMIN DASHBOARD
+    //  ADMIN DASHBOARD (yangilangan)
     // ==========================
     let chartInstance = null;
+    let chartDoughnut = null;
 
     async function renderAdminDashboard() {
         if (!isAdminFlag) return;
@@ -614,11 +768,18 @@
                 const now = new Date();
                 return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
             }).length;
+            const overdue = appeals.filter(a => {
+                if (a.status === 'resolved') return false;
+                return new Date(a.deadline) < new Date();
+            }).length;
+
             document.getElementById('statTotal').textContent = total;
             document.getElementById('statPending').textContent = pending;
             document.getElementById('statResolved').textContent = resolved;
             document.getElementById('statToday').textContent = today;
+            document.getElementById('statOverdue').textContent = overdue;
 
+            // Turlar bo'yicha
             const typeMap = {};
             appeals.forEach(a => { typeMap[a.type] = (typeMap[a.type] || 0) + 1; });
             let typeHtml = '';
@@ -637,6 +798,7 @@
             }
             document.getElementById('regionStats').innerHTML = regionHtml || 'Maʼlumot yo‘q';
 
+            // Bar chart
             const ctx = document.getElementById('statsChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
@@ -656,51 +818,122 @@
                     plugins: { legend: { display: false } }
                 }
             });
+
+            // Doughnut chart
+            const ctxD = document.getElementById('statsChartDoughnut').getContext('2d');
+            if (chartDoughnut) chartDoughnut.destroy();
+            const totalTypes = Object.values(typeMap).reduce((a,b) => a+b, 0);
+            const percentages = Object.values(typeMap).map(v => ((v / totalTypes) * 100).toFixed(1));
+            chartDoughnut = new Chart(ctxD, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeMap),
+                    datasets: [{
+                        data: Object.values(typeMap),
+                        backgroundColor: ['#4A90D9', '#f39c12', '#27ae60', '#e74c3c'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // So'nggi 5 ta murojaat
+            const recent = [...appeals].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,5);
+            const recentContainer = document.getElementById('recentAppealsList');
+            if (recent.length === 0) {
+                recentContainer.innerHTML = '<p style="color:#5a6b7a; font-size:14px;">Hali murojaat yo‘q.</p>';
+            } else {
+                let html = '';
+                recent.forEach(a => {
+                    const statusLabel = a.status === 'pending' ? 'Kutilmoqda' :
+                        a.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
+                    const badgeClass = a.status === 'pending' ? 'badge-pending' :
+                        a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
+                    html += `
+                        <div class="appeal-item" style="cursor:pointer; padding:8px 0 8px 10px;" onclick="openAppealDetail(${a.id})">
+                            <div><strong>#${a.id}</strong> - ${a.fullName || a.userName} (${a.region})</div>
+                            <div class="meta">
+                                <span><span class="badge ${badgeClass}">${statusLabel}</span></span>
+                                <span>${new Date(a.createdAt).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                recentContainer.innerHTML = html;
+            }
         } catch (err) {
             console.error('Dashboard xatolik:', err);
         }
     }
 
     // ==========================
-    //  ADMIN MUROJAATLAR RO'YXATI
+    //  ADMIN MUROJAATLAR RO'YXATI (qidiruv va filtr)
     // ==========================
+    let allAppealsCache = [];
+
     async function renderAdminAppeals() {
         if (!isAdminFlag) return;
         const container = document.getElementById('adminAppealsList');
         container.innerHTML = 'Yuklanmoqda...';
         try {
             const appeals = await apiFetch('/admin/appeals');
-            appeals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            if (!appeals.length) {
-                container.innerHTML = '<p>Hech qanday murojaat yo‘q.</p>';
-                return;
-            }
-            let html = '';
-            appeals.forEach(a => {
-                const statusLabel = a.status === 'pending' ? 'Kutilmoqda' :
-                    a.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
-                const badgeClass = a.status === 'pending' ? 'badge-pending' :
-                    a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
-                html += `
-                    <div class="appeal-item" style="cursor:pointer;" onclick="openAppealDetail(${a.id})">
-                        <div><strong>#${a.id}</strong> - ${a.fullName || a.userName} (${a.region})</div>
-                        <div style="font-size:13px;">${a.description.substring(0,50)}...</div>
-                        <div class="meta">
-                            <span><span class="badge ${badgeClass}">${statusLabel}</span></span>
-                            <span>${new Date(a.createdAt).toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
+            allAppealsCache = appeals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            filterAppeals();
         } catch (err) {
             container.innerHTML = '<p>Xatolik yuz berdi.</p>';
             console.error(err);
         }
     }
 
+    function filterAppeals() {
+        const query = document.getElementById('appealSearch').value.toLowerCase();
+        const statusFilter = document.getElementById('appealFilter').value;
+        let filtered = allAppealsCache;
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(a => a.status === statusFilter);
+        }
+        if (query) {
+            filtered = filtered.filter(a =>
+                a.id.toString().includes(query) ||
+                (a.fullName && a.fullName.toLowerCase().includes(query)) ||
+                (a.userName && a.userName.toLowerCase().includes(query)) ||
+                (a.region && a.region.toLowerCase().includes(query))
+            );
+        }
+        const container = document.getElementById('adminAppealsList');
+        if (!filtered.length) {
+            container.innerHTML = '<p>Hech qanday murojaat topilmadi.</p>';
+            return;
+        }
+        let html = '';
+        filtered.forEach(a => {
+            const statusLabel = a.status === 'pending' ? 'Kutilmoqda' :
+                a.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
+            const badgeClass = a.status === 'pending' ? 'badge-pending' :
+                a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
+            const isOverdue = a.status !== 'resolved' && new Date(a.deadline) < new Date();
+            html += `
+                <div class="appeal-item" style="cursor:pointer; ${isOverdue ? 'border-left-color: var(--danger);' : ''}" onclick="openAppealDetail(${a.id})">
+                    <div><strong>#${a.id}</strong> - ${a.fullName || a.userName} (${a.region}) ${isOverdue ? '🚨' : ''}</div>
+                    <div style="font-size:13px;">${a.description.substring(0,50)}...</div>
+                    <div class="meta">
+                        <span><span class="badge ${badgeClass}">${statusLabel}</span></span>
+                        <span>${new Date(a.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
     // ==========================
-    //  MUROJAAT TAFSILOTI (ADMIN)
+    //  MUROJAAT TAFSILOTI (ADMIN) – bo‘limlarga ajratilgan
     // ==========================
     let currentAppealId = null;
 
@@ -728,26 +961,53 @@
                 else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) icon = 'fa-file-image';
                 else if (['pdf', 'doc', 'docx', 'txt'].includes(ext)) icon = 'fa-file-pdf';
                 fileHtml = `
-                    <div style="margin:8px 0; background:var(--primary-bg); padding:8px; border-radius:8px;">
-                        <i class="fas ${icon}" style="color:var(--primary);"></i> 
-                        <a href="${appeal.file.data}" download="${appeal.file.name}" target="_blank" style="color:var(--primary-dark);">${appeal.file.name}</a>
+                    <div style="margin:8px 0; background:var(--primary-bg); padding:8px; border-radius:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <i class="fas ${icon}" style="color:var(--primary); font-size:20px;"></i> 
+                        <a href="${appeal.file.data}" download="${appeal.file.name}" target="_blank" style="color:var(--primary-dark); font-weight:600;">${appeal.file.name}</a>
                         <span style="font-size:12px; color:#5a6b7a;">(${(appeal.file.data.length/1024).toFixed(1)} KB)</span>
+                        <a href="${appeal.file.data}" download="${appeal.file.name}" class="btn btn-sm" style="width:auto; padding:4px 12px; margin-left:auto;">⬇ Yuklab olish</a>
                     </div>
                 `;
             }
             container.innerHTML = `
-                <p><strong>ID:</strong> #${appeal.id}</p>
-                <p><strong>Foydalanuvchi:</strong> ${appeal.userName}</p>
-                <p><strong>F.I.SH:</strong> ${appeal.fullName || 'Kiritilmagan'}</p>
-                <p><strong>Lavozim:</strong> ${appeal.position || 'Kiritilmagan'}</p>
-                <p><strong>Turi:</strong> ${appeal.type}</p>
-                <p><strong>Tuzilma:</strong> ${appeal.region}</p>
-                <p><strong>Tavsif:</strong> ${appeal.description}</p>
-                <p><strong>Holati:</strong> <span class="badge ${badgeClass}">${statusLabel}</span></p>
-                <p><strong>Yuborilgan:</strong> ${new Date(appeal.createdAt).toLocaleString()}</p>
-                <p><strong>Muddat:</strong> ${new Date(appeal.deadline).toLocaleDateString()}</p>
-                ${fileHtml}
-                ${appeal.adminResponse ? `<div style="background:var(--primary-bg); padding:10px; border-radius:8px; margin-top:8px; border-left:3px solid var(--primary);"><strong>Admin javobi:</strong> ${appeal.adminResponse}</div>` : ''}
+                <div class="detail-section">
+                    <div class="label">👤 Foydalanuvchi</div>
+                    <div class="value">${appeal.userName}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">📋 F.I.SH</div>
+                    <div class="value">${appeal.fullName || 'Kiritilmagan'}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">💼 Lavozim</div>
+                    <div class="value">${appeal.position || 'Kiritilmagan'}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">📌 Murojaat turi</div>
+                    <div class="value">${appeal.type}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">📍 Tuzilma</div>
+                    <div class="value">${appeal.region}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">📝 Tavsif</div>
+                    <div class="value">${appeal.description}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">📊 Holati</div>
+                    <div class="value"><span class="badge ${badgeClass}">${statusLabel}</span></div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">📅 Yuborilgan</div>
+                    <div class="value">${new Date(appeal.createdAt).toLocaleString()}</div>
+                </div>
+                <div class="detail-section">
+                    <div class="label">⏳ Muddat</div>
+                    <div class="value">${new Date(appeal.deadline).toLocaleDateString()}</div>
+                </div>
+                ${fileHtml ? `<div class="detail-section"><div class="label">📎 Fayl</div><div class="value">${fileHtml}</div></div>` : ''}
+                ${appeal.adminResponse ? `<div class="detail-section"><div class="label">💬 Admin javobi</div><div class="value" style="background:var(--primary-bg); padding:8px; border-radius:8px;">${appeal.adminResponse}</div></div>` : ''}
             `;
             document.getElementById('adminResponseText').value = appeal.adminResponse || '';
             navigateTo('adminAppealDetail');
