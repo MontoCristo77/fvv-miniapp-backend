@@ -424,9 +424,10 @@
 
 <script>
     // ------------------------------
-    // 0. ADMIN ID RO'YXATI (o'zingiznikini yozing)
+    // 0. ADMIN ID RO'YXATI (FAQAT SHU ID ADMIN)
     // ------------------------------
-    const ADMIN_IDS = [7117334799]; 
+    const ADMIN_IDS = [7117334799];
+
     // ------------------------------
     // 1. TELEGRAM INTEGRATION
     // ------------------------------
@@ -445,7 +446,7 @@
                 photo: user.photo_url || ''
             };
         } else {
-            // Demo (brauzerda sinov)
+            // Brauzerda sinov – admin emas
             currentUser = { id: 12345, firstName: 'Test', lastName: 'User', username: 'testuser' };
         }
     } catch (e) {
@@ -466,17 +467,14 @@
     // ------------------------------
     function setupNavigation() {
         const admin = isAdmin();
-        // Foydalanuvchi tugmalari
         document.querySelectorAll('.user-nav').forEach(el => {
             if (admin) el.classList.add('hidden');
             else el.classList.remove('hidden');
         });
-        // Admin tugmalari
         document.querySelectorAll('.admin-nav').forEach(el => {
             if (admin) el.classList.remove('hidden');
             else el.classList.add('hidden');
         });
-        // Foydalanuvchi ismi
         const fullName = currentUser.firstName + ' ' + currentUser.lastName;
         document.getElementById('bottomUserNameText').textContent = fullName || 'Foydalanuvchi';
     }
@@ -486,7 +484,6 @@
     // 4. NAVIGATION
     // ------------------------------
     function navigateTo(sectionId) {
-        // Admin bo'limlariga ruxsat
         const adminSections = ['adminDashboard', 'adminAppeals', 'adminAppealDetail'];
         if (adminSections.includes(sectionId) && !isAdmin()) {
             tg.showPopup({
@@ -497,10 +494,8 @@
             return;
         }
 
-        // Foydalanuvchi bo'limlariga admin kira olmaydi
         const userSections = ['userNewAppeal', 'userAppeals'];
         if (userSections.includes(sectionId) && isAdmin()) {
-            // Adminlar murojaat yo'llay olmaydi
             tg.showPopup({
                 title: 'Ruxsat yo‘q',
                 message: 'Siz admin sifatida murojaat yo‘llay olmaysiz.',
@@ -509,27 +504,21 @@
             return;
         }
 
-        // Yashirish va ko'rsatish
         document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
         const target = document.getElementById('section-' + sectionId);
         if (target) target.classList.add('active');
 
-        // Navigatsiya tugmalarini active qilish
         document.querySelectorAll('.bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
         const navBtn = document.querySelector(`.bottom-nav .nav-item[data-section="${sectionId}"]`);
         if (navBtn) navBtn.classList.add('active');
 
-        // Render
         if (sectionId === 'userAppeals') renderUserAppeals();
         if (sectionId === 'adminDashboard') renderAdminDashboard();
         if (sectionId === 'adminAppeals') renderAdminAppeals();
-        if (sectionId === 'adminAppealDetail') {
-            // detail already rendered by openAppealDetail
-        }
     }
 
     // ------------------------------
-    // 5. API SO'ROVLARI (backend bilan bog'lanish)
+    // 5. API SO'ROVLARI
     // ------------------------------
     const API_BASE = '/api';
 
@@ -546,7 +535,7 @@
     }
 
     // ------------------------------
-    // 6. USER: YANGI MUROJAAT
+    // 6. YANGI MUROJAAT
     // ------------------------------
     let selectedFile = null;
 
@@ -600,7 +589,7 @@
         }
 
         try {
-            const result = await apiFetch('/appeals', {
+            await apiFetch('/appeals', {
                 method: 'POST',
                 body: JSON.stringify({
                     fullName,
@@ -623,7 +612,7 @@
     });
 
     // ------------------------------
-    // 7. USER: MUROJAATLAR RO'YXATI
+    // 7. FOYDALANUVCHI MUROJAATLARI
     // ------------------------------
     async function renderUserAppeals() {
         if (isAdmin()) return;
@@ -672,7 +661,7 @@
     }
 
     // ------------------------------
-    // 8. ADMIN: DASHBOARD
+    // 8. ADMIN DASHBOARD
     // ------------------------------
     let chartInstance = null;
 
@@ -694,7 +683,6 @@
             document.getElementById('statResolved').textContent = resolved;
             document.getElementById('statToday').textContent = today;
 
-            // Turlar bo'yicha
             const typeMap = {};
             appeals.forEach(a => { typeMap[a.type] = (typeMap[a.type]||0) + 1; });
             let typeHtml = '';
@@ -703,7 +691,6 @@
             }
             document.getElementById('typeStats').innerHTML = typeHtml || 'Maʼlumot yo‘q';
 
-            // Tuzilmalar bo'yicha
             const regionMap = {};
             appeals.forEach(a => { regionMap[a.region] = (regionMap[a.region]||0) + 1; });
             let regionHtml = '';
@@ -712,7 +699,6 @@
             }
             document.getElementById('regionStats').innerHTML = regionHtml || 'Maʼlumot yo‘q';
 
-            // Grafik (Chart.js)
             const ctx = document.getElementById('statsChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
@@ -740,7 +726,7 @@
     }
 
     // ------------------------------
-    // 9. ADMIN: MUROJAATLAR RO'YXATI
+    // 9. ADMIN MUROJAATLAR RO'YXATI
     // ------------------------------
     async function renderAdminAppeals() {
         if (!isAdmin()) return;
@@ -778,7 +764,7 @@
     }
 
     // ------------------------------
-    // 10. ADMIN: MUROJAAT TAFSILOTI
+    // 10. MUROJAAT TAFSILOTI (ADMIN)
     // ------------------------------
     let currentAppealId = null;
 
@@ -839,7 +825,7 @@
     }
 
     // ------------------------------
-    // 11. ADMIN: JAVOB YUBORISH (Telegram xabar ham jo'natadi)
+    // 11. JAVOB YUBORISH (ADMIN)
     // ------------------------------
     async function submitAdminResponse() {
         if (!isAdmin() || !currentAppealId) return;
@@ -850,7 +836,6 @@
         }
 
         try {
-            // 1. Murojaatni yangilash (status resolved, adminResponse)
             await apiFetch('/admin/appeals/' + currentAppealId, {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -859,8 +844,6 @@
                 })
             });
 
-            // 2. Foydalanuvchiga Telegram xabar yuborish (backend orqali)
-            // Bu yerda backend /admin/notify endpoint ga so'rov yuboramiz
             await apiFetch('/admin/notify', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -884,7 +867,6 @@
     // ------------------------------
     // 12. ISHGA TUSHIRISH
     // ------------------------------
-    // Admin bo'lsa, dashboard ni ko'rsat, aks holda userHome
     if (isAdmin()) {
         navigateTo('adminDashboard');
     } else {
@@ -892,7 +874,8 @@
     }
 
     console.log('Admin IDlar:', ADMIN_IDS);
-    console.log('Joriy user:', currentUser.id, 'Adminmi?', isAdmin());
+console.log('Joriy user:', currentUser.id, 'Adminmi?', isAdmin());
+alert('User ID: ' + currentUser.id);
 </script>
 </body>
 </html>
