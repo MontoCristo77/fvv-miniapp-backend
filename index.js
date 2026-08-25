@@ -30,7 +30,7 @@ let appeals = loadJSON(DATA_FILE);
 let users = loadJSON(USERS_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 
-const ADMIN_IDS = [7117334799];
+const ADMIN_IDS = [7117334799]; // O'zingizning admin ID laringiz
 
 async function sendTelegramMessage(chatId, text) {
     if (!BOT_TOKEN) return false;
@@ -39,7 +39,7 @@ async function sendTelegramMessage(chatId, text) {
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text })
+            body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
         });
         const data = await res.json();
         return data.ok === true;
@@ -77,7 +77,7 @@ app.post('/webhook', async (req, res) => {
 
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
-app.post('/api/appeals', (req, res) => {
+app.post('/api/appeals', async (req, res) => {
     const { fullName, position, type, region, description, file, userId, userName } = req.body;
     const newAppeal = {
         id: nextId++,
@@ -97,6 +97,31 @@ app.post('/api/appeals', (req, res) => {
     };
     appeals.push(newAppeal);
     saveJSON(DATA_FILE, appeals);
+
+    // Adminlarga xabar yuborish
+    try {
+        const baseUrl = `https://fvv-miniapp-backend-production.up.railway.app`;
+        const adminMessage = 
+`📩 *Yangi murojaat #${newAppeal.id} keldi!*
+
+👤 *Foydalanuvchi:* ${newAppeal.userName}
+📌 *Turi:* ${newAppeal.type}
+📍 *Tuzilma:* ${newAppeal.region}
+📝 *Tavsif:* ${newAppeal.description.substring(0, 100)}${newAppeal.description.length > 100 ? '...' : ''}
+
+🔗 *Ko‘rish uchun:* ${baseUrl}`;
+
+        const adminPromises = ADMIN_IDS.map(adminId => 
+            sendTelegramMessage(adminId, adminMessage).catch(err => 
+                console.error(`Admin ${adminId} ga xabar yuborishda xatolik:`, err)
+            )
+        );
+        await Promise.all(adminPromises);
+        console.log(`✅ Adminlarga xabar yuborildi (murojaat #${newAppeal.id})`);
+    } catch (err) {
+        console.error('Adminlarga xabar yuborishda xatolik:', err);
+    }
+
     res.status(201).json(newAppeal);
 });
 
@@ -125,29 +150,21 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
     res.status(204).send();
 });
 
-// ----- MUDDATNI UZAYTIRISH (xatoliklarni logga chiqaradi) -----
 app.put('/api/admin/appeals/:id/extend', (req, res) => {
-    console.log('📥 Extend so‘rovi keldi:', req.params.id, req.body);
     const id = parseInt(req.params.id);
     const { days } = req.body;
     if (!days || days < 1) {
-        console.log('❌ Kunlar soni xato:', days);
         return res.status(400).json({ error: 'Kunlar soni to‘g‘ri emas (min 1)' });
     }
     const index = appeals.findIndex(a => a.id === id);
-    if (index === -1) {
-        console.log('❌ Murojaat topilmadi:', id);
-        return res.status(404).json({ error: 'Murojaat topilmadi' });
-    }
+    if (index === -1) return res.status(404).json({ error: 'Murojaat topilmadi' });
     if (appeals[index].status === 'resolved') {
-        console.log('❌ Hal qilingan murojaat:', id);
         return res.status(400).json({ error: 'Hal qilingan murojaat muddatini uzaytirib bo‘lmaydi' });
     }
     const currentDeadline = new Date(appeals[index].deadline);
     currentDeadline.setDate(currentDeadline.getDate() + days);
     appeals[index].deadline = currentDeadline.toISOString();
     saveJSON(DATA_FILE, appeals);
-    console.log('✅ Muddat yangilandi:', appeals[index].deadline);
     res.json(appeals[index]);
 });
 
