@@ -8,11 +8,9 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 console.log('🔍 BOT_TOKEN mavjudmi?', BOT_TOKEN ? 'HA' : 'YO\'Q');
 
-// ----- Fayl yo'llari -----
 const DATA_FILE = path.join(__dirname, 'data.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
 
-// ----- Ma'lumotlarni yuklash -----
 function loadJSON(file) {
     try {
         if (fs.existsSync(file)) {
@@ -32,10 +30,8 @@ let appeals = loadJSON(DATA_FILE);
 let users = loadJSON(USERS_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 
-// ----- ADMIN ID LAR -----
 const ADMIN_IDS = [7117334799];
 
-// ----- Telegram xabar yuborish -----
 async function sendTelegramMessage(chatId, text) {
     if (!BOT_TOKEN) return false;
     try {
@@ -57,7 +53,6 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// ----- WEBHOOK -----
 app.post('/webhook', async (req, res) => {
     const update = req.body;
     if (update.message && update.message.text === '/start') {
@@ -80,7 +75,6 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-// ----- API: FOYDALANUVCHI -----
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
 app.post('/api/appeals', (req, res) => {
@@ -106,7 +100,6 @@ app.post('/api/appeals', (req, res) => {
     res.status(201).json(newAppeal);
 });
 
-// ----- API: ADMIN -----
 app.get('/api/admin/appeals', (req, res) => res.json(appeals));
 
 app.put('/api/admin/appeals/:id', (req, res) => {
@@ -132,7 +125,6 @@ app.delete('/api/admin/appeals/:id', (req, res) => {
     res.status(204).send();
 });
 
-// ----- ADMIN JAVOB YOZGANDA XABAR YUBORISH -----
 app.post('/api/admin/notify', async (req, res) => {
     const { appealId, message } = req.body;
     const appeal = appeals.find(a => a.id === appealId);
@@ -148,18 +140,15 @@ app.post('/api/admin/notify', async (req, res) => {
     }
 });
 
-// ----- ADMINLIKNI TEKSHIRISH -----
 app.post('/api/check-admin', (req, res) => {
     const { userId } = req.body;
     res.json({ isAdmin: ADMIN_IDS.includes(Number(userId)) });
 });
 
-// ----- FRONTEND -----
 app.get('*', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-// ----- SERVERNI ISHGA TUSHIRISH -----
 app.listen(PORT, () => {
     console.log(`✅ Server ${PORT} portda ishga tushdi`);
     if (BOT_TOKEN) {
