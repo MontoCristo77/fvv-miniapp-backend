@@ -14,7 +14,7 @@ let appeals = [];
 let nextId = 1;
 
 // ----- ADMIN ID (faqat shu ID admin) -----
-const ADMIN_IDS = [7117334799];
+const ADMIN_IDS = [7117334799, 8893381144];
 
 // ----- TELEGRAM XABAR YUBORISH -----
 async function sendTelegramMessage(chatId, text) {
