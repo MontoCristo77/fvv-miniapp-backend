@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>FVV Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ----- GLOBAL (och moviy) ----- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #f5f8fc);
+            color: var(--tg-theme-text-color, #1a2a3a);
+            padding: 0 0 70px 0;
+        }
+        :root {
+            --primary: #4A90D9;
+            --primary-light: #6BA3E0;
+            --primary-dark: #2C6FBB;
+            --primary-bg: #E8F0FE;
+            --primary-border: #D4E4F7;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --warning: #f1c40f;
+            --dark-blue: #1a2a3a;
+            --light-gray: #f0f4f9;
+            --shadow: 0 2px 12px rgba(44, 111, 187, 0.15);
+            --radius: 12px;
+        }
+        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+        
+        /* ----- HEADER ----- */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            padding: 16px;
+            color: #fff;
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+        }
+        .app-header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+        .app-header .user-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .app-header .user-badge i { font-size: 16px; }
+        
+        /* ----- BOTTOM NAV ----- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid #e0e8f0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 999;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 8px;
+            transition: 0.2s;
+            background: transparent;
+            border: none;
+        }
+        .bottom-nav .nav-item i { font-size: 22px; margin-bottom: 2px; }
+        .bottom-nav .nav-item.active {
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        .bottom-nav .nav-item.active i { color: var(--primary-dark); }
+        .bottom-nav .nav-item.hidden { display: none; }
+        .bottom-nav .nav-item.user-name {
+            pointer-events: none;
+            color: var(--dark-blue);
+            font-weight: 500;
+            font-size: 13px;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bottom-nav .nav-item.user-name i {
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        /* ----- SECTIONS ----- */
+        .section { display: none; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0.5; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ----- CARDS ----- */
+        .card {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--primary-border);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--dark-blue);
+        }
+        .card-title i { color: var(--primary); }
+
+        /* ----- BADGES ----- */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #f39c12; color: #fff; }
+        .badge-inprogress { background: var(--primary); color: #fff; }
+        .badge-resolved { background: var(--success); color: #fff; }
+        .badge-overdue { background: var(--danger); color: #fff; }
+
+        /* ----- STATS ----- */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .stat-item {
+            background: var(--primary-bg);
+            padding: 12px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 1px solid var(--primary-border);
+        }
+        .stat-item .number { font-size: 28px; font-weight: 700; color: var(--primary-dark); }
+        .stat-item .label { font-size: 13px; color: #5a6b7a; }
+        .stat-item.primary .number { color: var(--primary-dark); }
+        .stat-item.danger .number { color: var(--danger); }
+        .stat-item.success .number { color: var(--success); }
+
+        /* ----- FORMS ----- */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--dark-blue); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--primary-border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fafcff;
+            transition: 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+
+        /* ----- FILE UPLOAD ----- */
+        .file-upload-wrapper { display: flex; gap: 10px; flex-wrap: wrap; }
+        .file-upload-wrapper label {
+            background: var(--primary-bg);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px dashed var(--primary);
+            color: var(--primary-dark);
+        }
+        .file-upload-wrapper label i { font-size: 18px; }
+        .file-upload-wrapper input[type="file"] { display: none; }
+        .file-preview {
+            margin-top: 8px;
+            font-size: 13px;
+            background: var(--primary-bg);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--primary-border);
+        }
+
+        /* ----- BUTTONS ----- */
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:hover { background: var(--primary-dark); opacity: 0.9; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #219a52; }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover { background: var(--primary-bg); }
+        .btn-sm { padding: 6px 14px; font-size: 13px; width: auto; }
+
+        /* ----- APPEAL ITEMS ----- */
+        .appeal-item {
+            border-left: 4px solid var(--primary);
+            padding: 12px 0 12px 12px;
+            margin-bottom: 12px;
+            background: #fafcff;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            border: 1px solid var(--primary-border);
+            border-left-width: 4px;
+        }
+        .appeal-item .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #5a6b7a;
+            margin-top: 4px;
+        }
+        .appeal-item .deadline { font-weight: 600; }
+        .appeal-item .deadline.urgent { color: var(--danger); }
+        .appeal-item .deadline.ok { color: var(--success); }
+
+        @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+    <h1><i class="fas fa-shield-alt"></i> FVV Xizmati</h1>
+    <div class="user-badge" id="userBadge">
+        <i class="fas fa-user"></i>
+        <span id="userName">Yuklanmoqda...</span>
+    </div>
+</header>
+
+<!-- MAIN CONTAINER -->
+<div class="container" id="appContainer">
+    <!-- ========== USER SECTION ========== -->
+    <div id="section-userHome" class="section active">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-home"></i> Bosh sahifa</div>
+            <p>Xush kelibsiz! Quyidagi menyu orqali murojaat yuborishingiz yoki murojaatlaringiz holatini ko‘rishingiz mumkin.</p>
+            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="navigateTo('userNewAppeal')"><i class="fas fa-plus-circle"></i> Yangi murojaat</button>
+                <button class="btn btn-sm btn-outline" onclick="navigateTo('userAppeals')"><i class="fas fa-list"></i> Murojaatlarim</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><i class="fas fa-bell"></i> So‘nggi xabarnoma</div>
+            <div id="userNotification">Hozircha xabarnoma yo‘q.</div>
+        </div>
+    </div>
+
+    <div id="section-userNewAppeal" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-pen-alt"></i> Yangi murojaat</div>
+            <form id="appealForm">
+                <div class="form-group">
+                    <label>Murojaat turi</label>
+                    <select id="appealType" required>
+                        <option value="taklif">Taklif</option>
+                        <option value="etiroz">Etiroz</option>
+                        <option value="shikoyat">Shikoyat</option>
+                        <option value="malumotlar">Maʼlumotlar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tuzilma (hudud / bo‘lim)</label>
+                    <input type="text" id="appealRegion" placeholder="Masalan: Guliston shahar FVB 1-Qutaqruv qismiga" required>
+                </div>
+                <!-- Yangi maydon: F.I.SH -->
+                <div class="form-group">
+                    <label>F.I.SH</label>
+                    <input type="text" id="appealFullName" placeholder="Masalan: Xudayberganov Rasulbek Azimboy o'g'li">
+                </div>
+                <!-- Yangi maydon: Lavozim -->
+                <div class="form-group">
+                    <label>Lavozim</label>
+                    <input type="text" id="appealPosition" placeholder="Masalan: Qutqaruvchi">
+                </div>
+                <div class="form-group">
+                    <label>Qisqa tavsif</label>
+                    <textarea id="appealDesc" placeholder="Vaziyatni batafsil yozing..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fayl biriktirish (audio, video, hujjat)</label>
+                    <div class="file-upload-wrapper">
+                        <label for="fileInput"><i class="fas fa-paperclip"></i> Fayl tanlash</label>
+                        <input type="file" id="fileInput" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt">
+                    </div>
+                    <div id="filePreview" class="file-preview" style="display:none;">
+                        <i class="fas fa-file"></i> <span id="fileName">fayl nomi</span>
+                        <button type="button" onclick="removeFile()" style="background:none;border:none;color:red;margin-left:auto;">✖</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Yuborish</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="section-userAppeals" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-list-ul"></i> Mening murojaatlarim</div>
+            <div id="userAppealsList">Hech qanday murojaat yo‘q.</div>
+        </div>
+    </div>
+
+    <!-- ========== ADMIN SECTION ========== -->
+    <div id="section-adminDashboard" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-chart-pie"></i> Dashboard</div>
+            <div class="stat-grid" id="statsGrid">
+                <div class="stat-item primary"><div class="number" id="statTotal">0</div><div class="label">Jami murojaat</div></div>
+                <div class="stat-item danger"><div class="number" id="statPending">0</div><div class="label">Kutilayotgan</div></div>
+                <div class="stat-item success"><div class="number" id="statResolved">0</div><div class="label">Hal qilingan</div></div>
+                <div class="stat-item"><div class="number" id="statToday">0</div><div class="label">Bugun kelgan</div></div>
+            </div>
+            <div style="margin-top:8px;">
+                <label>Turlar bo‘yicha:</label>
+                <div id="typeStats" style="font-size:14px; display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;"></div>
+            </div>
+            <div style="margin-top:8px;">
+                <label>Tuzilmalar bo‘yicha:</label>
+                <div id="regionStats" style="font-size:14px; display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;"></div>
+            </div>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="navigateTo('adminAppeals')"><i class="fas fa-list"></i> Barcha murojaatlarni ko‘rish</button>
+    </div>
+
+    <div id="section-adminAppeals" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-tasks"></i> Barcha murojaatlar</div>
+            <div id="adminAppealsList">Hozircha murojaat yo‘q.</div>
+        </div>
+    </div>
+
+    <div id="section-adminAppealDetail" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-info-circle"></i> Murojaat tafsilotlari</div>
+            <div id="appealDetailContent"></div>
+            <hr style="margin:16px 0; border-color: var(--primary-border);">
+            <div class="form-group">
+                <label>Javob matni</label>
+                <textarea id="adminResponseText" placeholder="Javobingizni yozing..." rows="4"></textarea>
+            </div>
+            <button class="btn btn-success" onclick="submitAdminResponse()"><i class="fas fa-reply"></i> Javob yuborish</button>
+            <button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="navigateTo('adminAppeals')">◀ Orqaga</button>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" data-section="userHome" onclick="navigateTo('userHome')">
+        <i class="fas fa-home"></i> <span>Bosh</span>
+    </button>
+    <!-- Pastki panelda F.I.SH ko'rsatiladi -->
+    <div class="nav-item user-name" id="bottomUserName">
+        <i class="fas fa-user-circle"></i>
+        <span id="bottomUserNameText">Masalan: Xudayberganov Rasulbek Azimboy o'g'li</span>
+    </div>
+    <button class="nav-item" data-section="userNewAppeal" onclick="navigateTo('userNewAppeal')">
+        <i class="fas fa-plus-circle"></i> <span>Yangi</span>
+    </button>
+    <button class="nav-item" data-section="userAppeals" onclick="navigateTo('userAppeals')">
+        <i class="fas fa-list"></i> <span>Murojaatlar</span>
+    </button>
+    <button class="nav-item hidden" id="adminNavBtn" data-section="adminDashboard" onclick="navigateTo('adminDashboard')">
+        <i class="fas fa-chart-pie"></i> <span>Admin</span>
+    </button>
+</nav>
+
+<script>
+    // ------------------------------
+    // ADMIN ID RO'YXATI
+    // ------------------------------
+    const ADMIN_IDS = [123456789, 987654321];
+
+    // ------------------------------
+    // TELEGRAM INTEGRATION
+    // ------------------------------
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    let currentUser = null;
+
+    try {
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            currentUser = {
+                id: user.id,
+                firstName: user.first_name || 'Ism',
+                lastName: user.last_name || '',
+                username: user.username || '',
+                photo: user.photo_url || ''
+            };
+        } else {
+            currentUser = { id: 12345, firstName: 'Test', lastName: 'User', username: 'testuser' };
+        }
+    } catch (e) {
+        currentUser = { id: 12345, firstName: 'Demo', lastName: 'User', username: 'demo' };
+    }
+
+    // Headerdagi ism
+    document.getElementById('userName').textContent = currentUser.firstName + ' ' + currentUser.lastName;
+
+    // ------------------------------
+    // PASTKI PANELDAGI ISMNI YANGILASH (F.I.SH ga qarab)
+    // ------------------------------
+    function updateBottomName(fullName) {
+        const span = document.getElementById('bottomUserNameText');
+        if (fullName && fullName.trim().length > 1) {
+            span.textContent = fullName.trim();
+        } else {
+            // Agar F.I.SH kiritilmagan bo'lsa, Telegram ismini olamiz yoki placeholder
+            const tgFullName = currentUser.firstName + ' ' + currentUser.lastName;
+            if (tgFullName.trim().length > 1) {
+                span.textContent = tgFullName;
+            } else {
+                span.textContent = 'Masalan: Xudayberganov Rasulbek Azimboy o\'g\'li';
+            }
+        }
+    }
+
+    // Birinchi marta ishga tushganda, localStorage dan oxirgi F.I.SH ni o'qib olamiz (agar mavjud bo'lsa)
+    const savedFullName = localStorage.getItem('fvv_user_fullname') || '';
+    updateBottomName(savedFullName);
+
+    // ------------------------------
+    // ADMINLIGINI TEKSHIRISH
+    // ------------------------------
+    function isAdmin() {
+        return ADMIN_IDS.includes(currentUser.id);
+    }
+
+    function setupNavigation() {
+        const adminBtn = document.getElementById('adminNavBtn');
+        if (isAdmin()) {
+            adminBtn.classList.remove('hidden');
+        } else {
+            adminBtn.classList.add('hidden');
+        }
+    }
+    setupNavigation();
+
+    // ------------------------------
+    // MA'LUMOTLAR (localStorage)
+    // ------------------------------
+    function getAppeals() {
+        const data = localStorage.getItem('fvv_appeals');
+        return data ? JSON.parse(data) : [];
+    }
+
+    function saveAppeals(appeals) {
+        localStorage.setItem('fvv_appeals', JSON.stringify(appeals));
+    }
+
+    function getNextId() {
+        const appeals = getAppeals();
+        return appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
+    }
+
+    // ------------------------------
+    // NAVIGATION
+    // ------------------------------
+    function navigateTo(sectionId) {
+        const adminSections = ['adminDashboard', 'adminAppeals', 'adminAppealDetail'];
+        if (adminSections.includes(sectionId) && !isAdmin()) {
+            tg.showPopup({
+                title: 'Ruxsat yo‘q',
+                message: 'Siz admin emassiz! Bu sahifa faqat adminlar uchun.',
+                buttons: [{ type: 'ok' }]
+            });
+            return;
+        }
+
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById('section-' + sectionId);
+        if (target) target.classList.add('active');
+
+        document.querySelectorAll('.bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
+        const navBtn = document.querySelector(`.bottom-nav .nav-item[data-section="${sectionId}"]`);
+        if (navBtn) navBtn.classList.add('active');
+        else {
+            if (sectionId === 'adminAppealDetail') {
+                const btn = document.querySelector(`.bottom-nav .nav-item[data-section="adminAppeals"]`);
+                if (btn) btn.classList.add('active');
+            }
+        }
+
+        if (sectionId === 'userAppeals') renderUserAppeals();
+        if (sectionId === 'adminDashboard') renderAdminDashboard();
+        if (sectionId === 'adminAppeals') renderAdminAppeals();
+        updateNotification();
+    }
+
+    // ------------------------------
+    // USER: YANGI MUROJAAT
+    // ------------------------------
+    let selectedFile = null;
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('filePreview').style.display = 'flex';
+        }
+    });
+
+    function removeFile() {
+        selectedFile = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('filePreview').style.display = 'none';
+    }
+
+    document.getElementById('appealForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const type = document.getElementById('appealType').value;
+        const region = document.getElementById('appealRegion').value.trim();
+        const fullName = document.getElementById('appealFullName').value.trim();
+        const position = document.getElementById('appealPosition').value.trim();
+        const desc = document.getElementById('appealDesc').value.trim();
+
+        if (!region || !desc) {
+            tg.showPopup({ title: 'Xatolik', message: 'Tuzilma va tavsifni to‘ldiring!', buttons: [{type:'ok'}] });
+            return;
+        }
+
+        // F.I.SH ni localStorage ga saqlaymiz (pastki panelda ko'rsatish uchun)
+        if (fullName) {
+            localStorage.setItem('fvv_user_fullname', fullName);
+            updateBottomName(fullName);
+        }
+
+        let fileData = null;
+        if (selectedFile) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                fileData = {
+                    name: selectedFile.name,
+                    type: selectedFile.type,
+                    data: event.target.result
+                };
+                saveAppeal(type, region, fullName, position, desc, fileData);
+            };
+            reader.readAsDataURL(selectedFile);
+        } else {
+            saveAppeal(type, region, fullName, position, desc, null);
+        }
+
+        function saveAppeal(type, region, fullName, position, desc, fileData) {
+            const appeals = getAppeals();
+            const now = new Date();
+            const deadline = new Date(now);
+            deadline.setDate(deadline.getDate() + 15);
+
+            const newAppeal = {
+                id: getNextId(),
+                userId: currentUser.id,
+                userName: currentUser.firstName + ' ' + currentUser.lastName,
+                fullName: fullName || currentUser.firstName + ' ' + currentUser.lastName,
+                position: position || '',
+                type: type,
+                region: region,
+                description: desc,
+                file: fileData,
+                status: 'pending',
+                createdAt: now.toISOString(),
+                deadline: deadline.toISOString(),
+                adminResponse: null,
+                responseDate: null,
+                notified: false
+            };
+            appeals.push(newAppeal);
+            saveAppeals(appeals);
+
+            document.getElementById('appealForm').reset();
+            removeFile();
+            tg.showPopup({ title: 'Bajarildi', message: 'Murojaatingiz qabul qilindi!', buttons: [{type:'ok'}] });
+            navigateTo('userAppeals');
+        }
+    });
+
+    // ------------------------------
+    // USER: MUROJAATLAR RO'YXATI
+    // ------------------------------
+    function renderUserAppeals() {
+        const appeals = getAppeals().filter(a => a.userId === currentUser.id);
+        const container = document.getElementById('userAppealsList');
+        if (!appeals.length) {
+            container.innerHTML = '<p>Siz hali murojaat yubormagansiz.</p>';
+            return;
+        }
+        let html = '';
+        appeals.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        appeals.forEach(a => {
+            const statusLabel = a.status === 'pending' ? 'Kutilmoqda' :
+                                a.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
+            const badgeClass = a.status === 'pending' ? 'badge-pending' :
+                               a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
+            const now = new Date();
+            const deadline = new Date(a.deadline);
+            const daysLeft = Math.ceil((deadline - now) / (1000*60*60*24));
+            let deadlineHtml = `<span class="deadline ${daysLeft < 0 ? 'urgent' : 'ok'}">${daysLeft < 0 ? 'Muddat o‘tgan!' : daysLeft + ' kun qoldi'}</span>`;
+
+            html += `
+                <div class="appeal-item">
+                    <div><strong>#${a.id}</strong> - ${a.type} (${a.region})</div>
+                    <div style="font-size:13px; margin-top:4px;">${a.description.substring(0,60)}${a.description.length>60?'...':''}</div>
+                    <div class="meta">
+                        <span><span class="badge ${badgeClass}">${statusLabel}</span></span>
+                        <span>${deadlineHtml}</span>
+                    </div>
+                    <div class="meta">
+                        <span>Yuborilgan: ${new Date(a.createdAt).toLocaleDateString()}</span>
+                        ${a.file ? `<span><i class="fas fa-paperclip"></i> 1 fayl</span>` : ''}
+                    </div>
+                    ${a.adminResponse ? `<div style="margin-top:6px; background:var(--primary-bg); padding:8px; border-radius:8px; font-size:13px; border-left:3px solid var(--primary);"><strong>Javob:</strong> ${a.adminResponse}</div>` : ''}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ------------------------------
+    // ADMIN: DASHBOARD
+    // ------------------------------
+    function renderAdminDashboard() {
+        if (!isAdmin()) return;
+        const appeals = getAppeals();
+        const total = appeals.length;
+        const pending = appeals.filter(a => a.status === 'pending' || a.status === 'in_progress').length;
+        const resolved = appeals.filter(a => a.status === 'resolved').length;
+        const today = appeals.filter(a => {
+            const d = new Date(a.createdAt);
+            const now = new Date();
+            return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }).length;
+
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statResolved').textContent = resolved;
+        document.getElementById('statToday').textContent = today;
+
+        const typeMap = {};
+        appeals.forEach(a => { typeMap[a.type] = (typeMap[a.type]||0) + 1; });
+        let typeHtml = '';
+        for (const [key, val] of Object.entries(typeMap)) {
+            typeHtml += `<span style="background:var(--primary-bg); padding:4px 12px; border-radius:20px; border:1px solid var(--primary-border);">${key}: ${val}</span>`;
+        }
+        document.getElementById('typeStats').innerHTML = typeHtml || 'Maʼlumot yo‘q';
+
+        const regionMap = {};
+        appeals.forEach(a => { regionMap[a.region] = (regionMap[a.region]||0) + 1; });
+        let regionHtml = '';
+        for (const [key, val] of Object.entries(regionMap)) {
+            regionHtml += `<span style="background:var(--primary-bg); padding:4px 12px; border-radius:20px; border:1px solid var(--primary-border);">${key}: ${val}</span>`;
+        }
+        document.getElementById('regionStats').innerHTML = regionHtml || 'Maʼlumot yo‘q';
+    }
+
+    // ------------------------------
+    // ADMIN: MUROJAATLAR RO'YXATI
+    // ------------------------------
+    function renderAdminAppeals() {
+        if (!isAdmin()) return;
+        const appeals = getAppeals().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const container = document.getElementById('adminAppealsList');
+        if (!appeals.length) {
+            container.innerHTML = '<p>Hech qanday murojaat yo‘q.</p>';
+            return;
+        }
+        let html = '';
+        appeals.forEach(a => {
+            const statusLabel = a.status === 'pending' ? 'Kutilmoqda' :
+                                a.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
+            const badgeClass = a.status === 'pending' ? 'badge-pending' :
+                               a.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
+            html += `
+                <div class="appeal-item" style="cursor:pointer;" onclick="openAppealDetail(${a.id})">
+                    <div><strong>#${a.id}</strong> - ${a.fullName || a.userName} (${a.region})</div>
+                    <div style="font-size:13px;">${a.description.substring(0,50)}...</div>
+                    <div class="meta">
+                        <span><span class="badge ${badgeClass}">${statusLabel}</span></span>
+                        <span>${new Date(a.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ------------------------------
+    // ADMIN: MUROJAAT TAFSILOTI
+    // ------------------------------
+    let currentAppealId = null;
+
+    function openAppealDetail(appealId) {
+        if (!isAdmin()) return;
+        currentAppealId = appealId;
+        const appeals = getAppeals();
+        const appeal = appeals.find(a => a.id === appealId);
+        if (!appeal) return;
+
+        const container = document.getElementById('appealDetailContent');
+        const statusLabel = appeal.status === 'pending' ? 'Kutilmoqda' :
+                            appeal.status === 'in_progress' ? 'Jarayonda' : 'Hal qilingan';
+        const badgeClass = appeal.status === 'pending' ? 'badge-pending' :
+                           appeal.status === 'in_progress' ? 'badge-inprogress' : 'badge-resolved';
+
+        let fileHtml = '';
+        if (appeal.file) {
+            const ext = appeal.file.name.split('.').pop().toLowerCase();
+            let icon = 'fa-file';
+            if (['mp3','wav','ogg'].includes(ext)) icon = 'fa-file-audio';
+            else if (['mp4','avi','mov'].includes(ext)) icon = 'fa-file-video';
+            else if (['jpg','jpeg','png','gif'].includes(ext)) icon = 'fa-file-image';
+            else if (['pdf','doc','docx','txt'].includes(ext)) icon = 'fa-file-pdf';
+            fileHtml = `
+                <div style="margin:8px 0; background:var(--primary-bg); padding:8px; border-radius:8px;">
+                    <i class="fas ${icon}" style="color:var(--primary);"></i> 
+                    <a href="${appeal.file.data}" download="${appeal.file.name}" target="_blank" style="color:var(--primary-dark);">${appeal.file.name}</a>
+                    <span style="font-size:12px; color:#5a6b7a;">(${(appeal.file.data.length/1024).toFixed(1)} KB)</span>
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <p><strong>ID:</strong> #${appeal.id}</p>
+            <p><strong>Foydalanuvchi:</strong> ${appeal.userName}</p>
+            <p><strong>F.I.SH:</strong> ${appeal.fullName || 'Kiritilmagan'}</p>
+            <p><strong>Lavozim:</strong> ${appeal.position || 'Kiritilmagan'}</p>
+            <p><strong>Turi:</strong> ${appeal.type}</p>
+            <p><strong>Tuzilma:</strong> ${appeal.region}</p>
+            <p><strong>Tavsif:</strong> ${appeal.description}</p>
+            <p><strong>Holati:</strong> <span class="badge ${badgeClass}">${statusLabel}</span></p>
+            <p><strong>Yuborilgan:</strong> ${new Date(appeal.createdAt).toLocaleString()}</p>
+            <p><strong>Muddat:</strong> ${new Date(appeal.deadline).toLocaleDateString()}</p>
+            ${fileHtml}
+            ${appeal.adminResponse ? `<div style="background:var(--primary-bg); padding:10px; border-radius:8px; margin-top:8px; border-left:3px solid var(--primary);"><strong>Admin javobi:</strong> ${appeal.adminResponse}</div>` : ''}
+        `;
+        document.getElementById('adminResponseText').value = appeal.adminResponse || '';
+
+        navigateTo('adminAppealDetail');
+    }
+
+    // ------------------------------
+    // ADMIN: JAVOB YUBORISH
+    // ------------------------------
+    function submitAdminResponse() {
+        if (!isAdmin()) return;
+        if (!currentAppealId) return;
+        const responseText = document.getElementById('adminResponseText').value.trim();
+        if (!responseText) {
+            tg.showPopup({ title: 'Xatolik', message: 'Javob matnini kiriting!', buttons: [{type:'ok'}] });
+            return;
+        }
+
+        let appeals = getAppeals();
+        const index = appeals.findIndex(a => a.id === currentAppealId);
+        if (index === -1) return;
+
+        appeals[index].status = 'resolved';
+        appeals[index].adminResponse = responseText;
+        appeals[index].responseDate = new Date().toISOString();
+        saveAppeals(appeals);
+
+        const notifications = JSON.parse(localStorage.getItem('fvv_notifications') || '[]');
+        notifications.push({
+            userId: appeals[index].userId,
+            appealId: appeals[index].id,
+            message: `Sizning #${appeals[index].id} raqamli murojaatingizga javob berildi: ${responseText}`,
+            read: false,
+            date: new Date().toISOString()
+        });
+        localStorage.setItem('fvv_notifications', JSON.stringify(notifications));
+
+        tg.showPopup({ title: 'Bajarildi', message: 'Javob yuborildi va foydalanuvchiga xabarnoma jo‘natildi!', buttons: [{type:'ok'}] });
+        navigateTo('adminAppeals');
+        renderAdminAppeals();
+        updateNotification();
+    }
+
+    // ------------------------------
+    // XABARNOMA
+    // ------------------------------
+    function updateNotification() {
+        const notifications = JSON.parse(localStorage.getItem('fvv_notifications') || '[]');
+        const userNotif = notifications.filter(n => n.userId === currentUser.id && !n.read);
+        const container = document.getElementById('userNotification');
+        if (userNotif.length === 0) {
+            container.innerHTML = 'Hozircha xabarnoma yo‘q.';
+            return;
+        }
+        let html = '';
+        userNotif.forEach(n => {
+            html += `<div style="background:#fff3cd; padding:8px; border-radius:8px; margin-bottom:6px; border-left:3px solid var(--warning);">
+                        <i class="fas fa-bell" style="color:var(--warning);"></i> ${n.message}
+                        <div style="font-size:11px; color:#5a6b7a;">${new Date(n.date).toLocaleString()}</div>
+                    </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // ------------------------------
+    // ISHGA TUSHIRISH
+    // ------------------------------
+    navigateTo('userHome');
+    console.log('Prototip ishga tushdi. F.I.SH va Lavozim qo‘shildi.');
+</script>
+</body>
+</html>
