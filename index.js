@@ -6,7 +6,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_USERNAME = process.env.BOT_USERNAME || 'sirdaryoFVBgamurojaat_bot';
+
 console.log('🔍 BOT_TOKEN mavjudmi?', BOT_TOKEN ? 'HA' : 'YO\'Q');
+console.log('🤖 BOT_USERNAME:', BOT_USERNAME);
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -98,9 +101,8 @@ app.post('/api/appeals', async (req, res) => {
     appeals.push(newAppeal);
     saveJSON(DATA_FILE, appeals);
 
-    // Adminlarga xabar yuborish
+    // Adminlarga xabar yuborish (Telegram ilovasida ochiladigan link bilan)
     try {
-        const baseUrl = `https://fvv-miniapp-backend-production.up.railway.app`;
         const adminMessage = 
 `📩 *Yangi murojaat #${newAppeal.id} keldi!*
 
@@ -109,7 +111,7 @@ app.post('/api/appeals', async (req, res) => {
 📍 *Tuzilma:* ${newAppeal.region}
 📝 *Tavsif:* ${newAppeal.description.substring(0, 100)}${newAppeal.description.length > 100 ? '...' : ''}
 
-🔗 *Ko‘rish uchun:* ${baseUrl}`;
+🔗 *Ko‘rish uchun:* https://t.me/${BOT_USERNAME}?start=appeal_${newAppeal.id}`;
 
         const adminPromises = ADMIN_IDS.map(adminId => 
             sendTelegramMessage(adminId, adminMessage).catch(err => 
