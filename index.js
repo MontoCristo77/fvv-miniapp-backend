@@ -15,7 +15,7 @@ let appeals = [];
 let nextId = 1;
 
 // ----- ADMIN ID RO'YXATI (o'zingiznikini yozing!) -----
-const ADMIN_IDS = [+998993336005, +998870421050]; // 
+const ADMIN_IDS = [7117334799]; // 
 
 // ----- FUNKSIYA: Telegram xabar yuborish -----
 async function sendTelegramMessage(chatId, text) {
