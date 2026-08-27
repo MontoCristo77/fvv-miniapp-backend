@@ -9,56 +9,109 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background: var(--tg-theme-bg-color, #f5f8fc);
-            color: var(--tg-theme-text-color, #1a2a3a);
-            padding: 0 0 70px 0;
-        }
         :root {
-            --primary: #4A90D9;
-            --primary-dark: #2C6FBB;
-            --primary-bg: #E8F0FE;
-            --primary-border: #D4E4F7;
-            --danger: #e74c3c;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --shadow: 0 2px 12px rgba(44, 111, 187, 0.15);
-            --radius: 12px;
-            --text-dark: #1a2a3a;
+            --navy: #14325c;
+            --navy-2: #0d2340;
+            --blue: #2f6fe0;
+            --blue-dark: #1f4fc4;
+            --blue-bg: #e9f1fd;
+            --blue-border: #d3e3fa;
+            --orange: #f5a524;
+            --orange-bg: #fef2df;
+            --orange-border: #fbe3b8;
+            --green: #17a374;
+            --green-bg: #e3f7ef;
+            --green-border: #bfeed9;
+            --red: #e5484d;
+            --red-bg: #fdeaea;
+            --red-border: #f8c9cb;
+            --purple: #8b5cf6;
+            --purple-bg: #f1ebfe;
+            --purple-border: #ddccfb;
+            --text-dark: #16233a;
+            --gray-text: #64748b;
+            --radius: 16px;
+            --shadow: 0 4px 16px rgba(15,39,69,.08);
+            --primary: var(--blue);
+            --primary-dark: var(--blue-dark);
+            --primary-bg: var(--blue-bg);
+            --primary-border: var(--blue-border);
+            --danger: var(--red);
+            --success: var(--green);
+            --warning: var(--orange);
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #f3f6fb;
+            color: var(--text-dark);
+            padding: 0 0 78px 0;
         }
         .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
         .app-header {
-            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-            padding: 16px;
-            color: #fff;
-            border-radius: 0 0 20px 20px;
+            background: #ffffff;
+            padding: 14px 16px;
+            color: var(--navy);
+            border-bottom: 1px solid #e4ebf5;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--shadow);
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(15,39,69,.05);
+            position: sticky;
+            top: 0;
+            z-index: 998;
         }
-        .app-header h1 { font-size: 16px; font-weight: 700; }
+        .app-header .emblem {
+            width: 38px; height: 38px; min-width: 38px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, var(--navy), var(--blue));
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 17px;
+            box-shadow: 0 3px 8px rgba(20,50,92,.35);
+        }
+        .app-header .title-block { flex: 1; min-width: 0; }
+        .app-header h1 {
+            font-size: 12.5px;
+            font-weight: 800;
+            letter-spacing: .2px;
+            line-height: 1.25;
+            color: var(--navy);
+            text-transform: uppercase;
+        }
+        .app-header .subtitle { font-size: 10.5px; color: var(--gray-text); font-weight: 600; margin-top: 1px; }
         .app-header .user-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 6px 12px;
+            background: var(--blue-bg);
+            color: var(--blue-dark);
+            padding: 5px 10px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 11.5px;
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            white-space: nowrap;
         }
+        .admin-badge {
+            background: #f1c40f;
+            color: #1a2a3a;
+            padding: 2px 9px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 800;
+            display: inline-block;
+            margin-left: 4px;
+        }
+
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background: #fff;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 8px 0;
-            border-top: 1px solid #e0e8f0;
+            padding: 6px 4px 8px;
+            border-top: 1px solid #e4ebf5;
+            box-shadow: 0 -4px 14px rgba(15,39,69,.06);
             z-index: 999;
             max-width: 480px;
             margin: 0 auto;
@@ -67,292 +120,209 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 12px;
-            color: #7f8c8d;
+            gap: 2px;
+            font-size: 10.5px;
+            color: #9aa8bd;
             cursor: pointer;
-            padding: 4px 12px;
-            border-radius: 8px;
+            padding: 6px 10px 4px;
+            border-radius: 10px;
             background: transparent;
             border: none;
+            font-weight: 600;
         }
-        .bottom-nav .nav-item i { font-size: 22px; margin-bottom: 2px; }
-        .bottom-nav .nav-item.active { color: var(--primary-dark); font-weight: 600; }
+        .bottom-nav .nav-item i { font-size: 19px; }
+        .bottom-nav .nav-item.active { color: var(--blue-dark); background: var(--blue-bg); }
         .bottom-nav .nav-item.hidden { display: none; }
         .bottom-nav .nav-item.user-name {
             pointer-events: none;
             color: var(--text-dark);
-            font-weight: 500;
-            font-size: 13px;
-            max-width: 120px;
+            font-weight: 600;
+            font-size: 10.5px;
+            max-width: 74px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .section { display: none; animation: fadeIn 0.3s; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0.5; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .screen-title { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .screen-title .back-btn {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: var(--blue-bg); color: var(--blue-dark); border: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; cursor: pointer;
+        }
+        .screen-title h2 { font-size: 17px; font-weight: 800; color: var(--navy); }
+
         .card {
-            background: #fff;
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--primary-border);
+            background: #fff; border-radius: var(--radius); padding: 16px; margin-bottom: 16px;
+            box-shadow: var(--shadow); border: 1px solid #eaf0f8;
         }
         .card-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-dark);
+            font-size: 15px; font-weight: 700; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px; color: var(--navy);
         }
-        .card-title i { color: var(--primary); }
+        .card-title i { color: var(--blue); }
         .text-dark { color: var(--text-dark); }
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+        .muted { color: var(--gray-text); font-size: 13px; }
+
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+        .badge-pending { background: var(--orange-bg); color: #b06f04; }
+        .badge-inprogress { background: var(--blue-bg); color: var(--blue-dark); }
+        .badge-resolved { background: var(--green-bg); color: #0d7a56; }
+        .badge-new { background: var(--blue-bg); color: var(--blue-dark); }
+        .badge-answered { background: var(--purple-bg); color: #6d38d6; }
+
+        .menu-list { display: flex; flex-direction: column; gap: 10px; }
+        .menu-row {
+            display: flex; align-items: center; gap: 12px; background: #fff;
+            border: 1px solid #eaf0f8; border-radius: var(--radius); padding: 13px 14px;
+            box-shadow: var(--shadow); cursor: pointer; transition: transform .15s ease, box-shadow .15s ease;
         }
-        .badge-pending { background: #f39c12; color: #fff; }
-        .badge-inprogress { background: var(--primary); color: #fff; }
-        .badge-resolved { background: var(--success); color: #fff; }
-        .badge-new { background: #3498db; color: #fff; }
-        .badge-answered { background: #9b59b6; color: #fff; }
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+        .menu-row:active { transform: scale(0.98); }
+        .menu-row .icon-box { width: 42px; height: 42px; min-width: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; }
+        .menu-row .row-text { flex: 1; min-width: 0; }
+        .menu-row .row-title { font-weight: 700; font-size: 14.5px; color: var(--text-dark); }
+        .menu-row .row-sub { font-size: 12px; color: var(--gray-text); margin-top: 1px; }
+        .menu-row .chevron { color: #c3cede; font-size: 14px; }
+
+        .icon-navy { background: linear-gradient(135deg, var(--navy), var(--blue)); }
+        .icon-blue { background: linear-gradient(135deg, var(--blue-dark), var(--blue)); }
+        .icon-orange { background: linear-gradient(135deg, #d98708, var(--orange)); }
+        .icon-green { background: linear-gradient(135deg, #0d7a56, var(--green)); }
+        .icon-red { background: linear-gradient(135deg, #c53338, var(--red)); }
+        .icon-purple { background: linear-gradient(135deg, #6d38d6, var(--purple)); }
+        .icon-gray { background: linear-gradient(135deg, #64748b, #94a3b8); }
+
+        .type-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+        .type-card {
+            display: flex; align-items: center; gap: 12px; border: 2px solid #eaf0f8;
+            border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: .15s ease; background: #fbfdff;
         }
-        .stat-grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-        .stat-item {
-            background: var(--primary-bg);
-            padding: 12px;
-            border-radius: var(--radius);
-            text-align: center;
-            border: 1px solid var(--primary-border);
-        }
-        .stat-item .number { font-size: 28px; font-weight: 700; color: var(--primary-dark); }
-        .stat-item .label { font-size: 12px; color: #5a6b7a; }
-        .stat-item .icon { font-size: 24px; display: block; margin-bottom: 4px; }
-        .stat-item.danger .number { color: var(--danger); }
-        .stat-item.success .number { color: var(--success); }
-        .stat-item.warning .number { color: var(--warning); }
-        .stat-item.primary .number { color: var(--primary-dark); }
+        .type-card:active { transform: scale(0.98); }
+        .type-card.selected { border-color: var(--blue); background: var(--blue-bg); }
+        .type-card .icon-box { width: 40px; height: 40px; min-width: 40px; border-radius: 11px; font-size: 16px; }
+        .type-card .row-title { font-weight: 700; font-size: 14.5px; }
+        .type-card .row-sub { font-size: 11.5px; color: var(--gray-text); margin-top: 1px; }
+
+        .type-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px 3px 6px; border-radius: 20px; }
+        .type-chip i { font-size: 10px; }
+        .type-chip.chip-blue { background: var(--blue-bg); color: var(--blue-dark); }
+        .type-chip.chip-orange { background: var(--orange-bg); color: #b06f04; }
+        .type-chip.chip-green { background: var(--green-bg); color: #0d7a56; }
+        .type-chip.chip-red { background: var(--red-bg); color: #b3282c; }
+        .type-chip.chip-purple { background: var(--purple-bg); color: #6d38d6; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .stat-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .stat-item { background: var(--blue-bg); padding: 12px; border-radius: var(--radius); text-align: center; border: 1px solid var(--blue-border); }
+        .stat-item .number { font-size: 26px; font-weight: 800; color: var(--blue-dark); }
+        .stat-item .label { font-size: 11.5px; color: #5a6b7a; font-weight: 600; }
+        .stat-item .icon { font-size: 22px; display: block; margin-bottom: 4px; }
+        .stat-item.danger { background: var(--red-bg); border-color: var(--red-border); }
+        .stat-item.danger .number { color: var(--red); }
+        .stat-item.success { background: var(--green-bg); border-color: var(--green-border); }
+        .stat-item.success .number { color: var(--green); }
+        .stat-item.warning { background: var(--orange-bg); border-color: var(--orange-border); }
+        .stat-item.warning .number { color: #b06f04; }
+        .stat-item.primary { background: var(--blue-bg); border-color: var(--blue-border); }
+        .stat-item.primary .number { color: var(--blue-dark); }
+
         .form-group { margin-bottom: 16px; }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-            color: var(--text-dark);
-        }
+        .form-group label { display: block; font-weight: 700; font-size: 13.5px; margin-bottom: 5px; color: var(--text-dark); }
         .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--primary-border);
-            border-radius: 8px;
-            font-size: 14px;
-            background: #fafcff;
-            color: var(--text-dark);
+            width: 100%; padding: 11px 12px; border: 1px solid var(--blue-border); border-radius: 10px;
+            font-size: 14px; background: #fafcff; color: var(--text-dark);
         }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+            border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(47, 110, 224, 0.15);
         }
-        .form-group textarea { min-height: 80px; resize: vertical; }
-        .form-group .checkbox-group {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .form-group .checkbox-group label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 400;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .form-group .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
+        .form-group textarea { min-height: 90px; resize: vertical; }
+        .form-group .checkbox-group { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        .form-group .checkbox-group label { display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 14px; cursor: pointer; }
+        .form-group .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
         .file-upload-wrapper { display: flex; gap: 10px; flex-wrap: wrap; }
         .file-upload-wrapper label {
-            background: var(--primary-bg);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px dashed var(--primary);
-            color: var(--primary-dark);
+            background: var(--blue-bg); padding: 9px 16px; border-radius: 10px; cursor: pointer;
+            font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+            border: 1.5px dashed var(--blue); color: var(--blue-dark); font-weight: 600;
         }
         .file-upload-wrapper input[type="file"] { display: none; }
         .file-preview {
-            margin-top: 8px;
-            font-size: 13px;
-            background: var(--primary-bg);
-            padding: 8px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid var(--primary-border);
-            color: var(--text-dark);
+            margin-top: 8px; font-size: 13px; background: var(--blue-bg); padding: 9px;
+            border-radius: 10px; display: flex; align-items: center; gap: 8px;
+            border: 1px solid var(--blue-border); color: var(--text-dark);
         }
+
         .btn {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            width: 100%;
-            cursor: pointer;
-            transition: 0.2s;
+            background: var(--blue); color: #fff; border: none; padding: 13px;
+            border-radius: 11px; font-size: 15.5px; font-weight: 700; width: 100%; cursor: pointer; transition: 0.2s;
         }
-        .btn:hover { background: var(--primary-dark); opacity: 0.9; }
-        .btn-success { background: var(--success); }
-        .btn-success:hover { background: #219a52; }
-        .btn-danger { background: var(--danger); }
+        .btn:hover { background: var(--blue-dark); }
+        .btn-success { background: var(--green); }
+        .btn-success:hover { background: #0d7a56; }
+        .btn-danger { background: var(--red); }
         .btn-danger:hover { background: #c0392b; }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-        .btn-outline:hover { background: var(--primary-bg); }
-        .btn-sm { padding: 6px 14px; font-size: 13px; width: auto; }
+        .btn-outline { background: transparent; border: 2px solid var(--blue); color: var(--blue); }
+        .btn-outline:hover { background: var(--blue-bg); }
+        .btn-sm { padding: 7px 14px; font-size: 13px; width: auto; }
         .btn-secondary { background: #7f8c8d; }
         .btn-secondary:hover { background: #5a6b7a; }
         .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-row .btn { flex: 1; min-width: 100px; }
-        .step-indicators {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .step-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ddd;
-            transition: 0.3s;
-        }
-        .step-dot.active { background: var(--primary); }
-        .step-dot.done { background: var(--success); }
-        .appeal-item {
-            border-left: 4px solid var(--primary);
-            padding: 12px 0 12px 12px;
-            margin-bottom: 12px;
-            background: #fafcff;
-            border-radius: 0 var(--radius) var(--radius) 0;
-            border: 1px solid var(--primary-border);
-            border-left-width: 4px;
-            color: var(--text-dark);
-            position: relative;
-        }
-        .appeal-item .meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #5a6b7a;
-            margin-top: 4px;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-        .appeal-item .deadline { font-weight: 600; }
-        .appeal-item .deadline.urgent { color: var(--danger); }
-        .appeal-item .deadline.ok { color: var(--success); }
-        .appeal-item .action-buttons {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-            flex-wrap: wrap;
-        }
-        .appeal-item .action-buttons .btn-sm { font-size: 11px; padding: 3px 10px; }
+
+        .step-indicators { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #dbe4f0; transition: 0.3s; }
+        .step-dot.active { background: var(--blue); width: 22px; border-radius: 5px; }
+        .step-dot.done { background: var(--green); }
+
+        .appeal-item { padding: 13px 14px; margin-bottom: 12px; background: #fbfdff; border-radius: 14px; border: 1px solid #eaf0f8; color: var(--text-dark); position: relative; }
+        .appeal-item .top-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+        .appeal-item .appeal-id { font-weight: 800; color: var(--navy); }
+        .appeal-item .meta { display: flex; justify-content: space-between; font-size: 12.5px; color: #5a6b7a; margin-top: 6px; flex-wrap: wrap; gap: 4px; }
+        .appeal-item .deadline { font-weight: 700; }
+        .appeal-item .deadline.urgent { color: var(--red); }
+        .appeal-item .deadline.ok { color: var(--green); }
+        .appeal-item .action-buttons { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+        .appeal-item .action-buttons .btn-sm { font-size: 11px; padding: 4px 10px; }
+
         .chart-container { height: 200px; margin-top: 10px; }
         .chart-row { display: flex; gap: 16px; flex-wrap: wrap; }
         .chart-row .chart-box { flex: 1; min-width: 140px; }
-        .notification-item {
-            background: var(--primary-bg);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border-left: 3px solid var(--primary);
-            color: var(--text-dark);
-        }
-        .notification-item .time {
-            font-size: 12px;
-            color: #5a6b7a;
-            margin-top: 4px;
-        }
-        .admin-badge {
-            background: #f1c40f;
-            color: #1a2a3a;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            display: inline-block;
-            margin-left: 6px;
-        }
+
+        .notification-item { background: var(--blue-bg); padding: 11px; border-radius: 12px; margin-bottom: 8px; border-left: 3px solid var(--blue); color: var(--text-dark); }
+        .notification-item .time { font-size: 11.5px; color: #5a6b7a; margin-top: 4px; }
+
         .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-        .filter-row input, .filter-row select {
-            padding: 8px 12px;
-            border: 1px solid var(--primary-border);
-            border-radius: 8px;
-            font-size: 14px;
-            flex: 1;
-            min-width: 100px;
-        }
-        .detail-section {
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--primary-border);
-        }
+        .filter-row input, .filter-row select { padding: 9px 12px; border: 1px solid var(--blue-border); border-radius: 10px; font-size: 14px; flex: 1; min-width: 100px; }
+
+        .detail-section { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eaf0f8; }
         .detail-section:last-child { border-bottom: none; }
-        .detail-section .label { font-weight: 600; color: #5a6b7a; font-size: 13px; }
-        .detail-section .value { font-size: 15px; margin-top: 2px; }
+        .detail-section .label { font-weight: 700; color: #5a6b7a; font-size: 12.5px; }
+        .detail-section .value { font-size: 14.5px; margin-top: 2px; }
+
         .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .flex-row .btn-sm { width: auto; }
-        .top-problem-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--primary-border);
-        }
-        .top-problem-item .rank {
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--primary);
-            min-width: 30px;
-        }
-        .top-problem-item .problem-name { flex: 1; }
-        .top-problem-item .count {
-            background: var(--primary-bg);
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 13px;
-        }
-        @media (max-width: 480px) { 
+
+        .top-problem-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #eaf0f8; }
+        .top-problem-item .rank { font-weight: 800; font-size: 16px; color: var(--blue); min-width: 26px; }
+        .top-problem-item .problem-name { flex: 1; font-weight: 600; }
+        .top-problem-item .count { background: var(--blue-bg); color: var(--blue-dark); padding: 2px 10px; border-radius: 20px; font-size: 12.5px; font-weight: 700; }
+
+        .about-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #eaf0f8; }
+        .about-row:last-child { border-bottom: none; }
+        .about-row i { color: var(--blue); font-size: 16px; margin-top: 2px; }
+        .contact-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eaf0f8; }
+        .contact-row:last-child { border-bottom: none; }
+        .contact-row .icon-box { width: 40px; height: 40px; min-width: 40px; border-radius: 11px; font-size: 16px; }
+        .contact-row .c-title { font-weight: 700; font-size: 14px; }
+        .contact-row .c-sub { font-size: 13px; color: var(--gray-text); }
+
+        @media (max-width: 480px) {
             .stat-grid { grid-template-columns: 1fr 1fr; }
             .stat-grid-3 { grid-template-columns: 1fr 1fr; }
         }
@@ -361,7 +331,11 @@
 <body>
 
 <header class="app-header">
-    <h1><i class="fas fa-shield-alt"></i> Sirdaryo FVB boshlig'iga murojaat</h1>
+    <div class="emblem"><i class="fas fa-shield-halved"></i></div>
+    <div class="title-block">
+        <h1>Sirdaryo viloyati FVB boshqarma boshlig'iga murojaat</h1>
+        <div class="subtitle">Murojaatchi paneli</div>
+    </div>
     <div class="user-badge" id="userBadge">
         <i class="fas fa-user"></i>
         <span id="userName">Yuklanmoqda...</span>
@@ -371,64 +345,104 @@
 
 <div class="container" id="appContainer">
     <!-- ===== USER SECTION ===== -->
-    <!-- Bosh sahifa -->
     <div id="section-userHome" class="section">
-        <div class="card">
-            <div class="card-title"><i class="fas fa-home"></i> Bosh sahifa</div>
-            <p class="text-dark">Xush kelibsiz! Quyidagi menyu orqali murojaat yuborishingiz yoki murojaatlaringiz holatini ko‘rishingiz mumkin.</p>
-            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="btn btn-sm" onclick="navigateTo('userNewAppeal')"><i class="fas fa-plus-circle"></i> Yangi murojaat</button>
-                <button class="btn btn-sm btn-outline" onclick="navigateTo('userAppeals')"><i class="fas fa-list"></i> Mening murojaatlarim</button>
+        <div class="menu-list">
+            <div class="menu-row" onclick="navigateTo('userNewAppeal')">
+                <div class="icon-box icon-navy"><i class="fas fa-paper-plane"></i></div>
+                <div class="row-text">
+                    <div class="row-title">Murojaat yuborish</div>
+                    <div class="row-sub">Muammo, taklif yoki shikoyatingizni yuboring</div>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
             </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><i class="fas fa-bell"></i> So‘nggi xabarnomalar</div>
-            <div id="userNotification">Hozircha xabarnoma yo‘q.</div>
+            <div class="menu-row" onclick="navigateTo('userAppeals')">
+                <div class="icon-box icon-orange"><i class="fas fa-folder-open"></i></div>
+                <div class="row-text">
+                    <div class="row-title">Mening murojaatlarim</div>
+                    <div class="row-sub">Yuborgan murojaatlaringiz holatini kuzating</div>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="menu-row" onclick="navigateTo('userNotifications')">
+                <div class="icon-box icon-red"><i class="fas fa-bell"></i></div>
+                <div class="row-text">
+                    <div class="row-title">Bildirishnomalar</div>
+                    <div class="row-sub">Yangi javoblar va o'zgarishlar haqida ma'lumot oling</div>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="menu-row" onclick="navigateTo('userContact')">
+                <div class="icon-box icon-green"><i class="fas fa-headset"></i></div>
+                <div class="row-text">
+                    <div class="row-title">Aloqa</div>
+                    <div class="row-sub">Biz bilan bog'lanish</div>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="menu-row" onclick="navigateTo('userAbout')">
+                <div class="icon-box icon-purple"><i class="fas fa-circle-info"></i></div>
+                <div class="row-text">
+                    <div class="row-title">Platforma haqida</div>
+                    <div class="row-sub">Murojaat yuborish tartibi va maxfiylik</div>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
         </div>
     </div>
 
-    <!-- Yangi murojaat (4 bosqich) -->
     <div id="section-userNewAppeal" class="section">
+        <div class="screen-title">
+            <button class="back-btn" onclick="navigateTo('userHome')"><i class="fas fa-chevron-left"></i></button>
+            <h2 id="stepTitle">Murojaat turi</h2>
+        </div>
         <div class="card">
-            <div class="card-title"><i class="fas fa-pen-alt"></i> Yangi murojaat</div>
-            <!-- Bosqich indikatorlari -->
             <div class="step-indicators">
                 <div class="step-dot active" id="stepDot1"></div>
                 <div class="step-dot" id="stepDot2"></div>
                 <div class="step-dot" id="stepDot3"></div>
                 <div class="step-dot" id="stepDot4"></div>
             </div>
-            <!-- 1-qadam: Murojaat turi -->
             <div id="step1" class="step-content">
-                <div class="form-group">
-                    <label>Murojaat turi tanlang</label>
-                    <select id="appealType" required>
-                        <option value="">-- Tanlang --</option>
-                        <option value="ariza">📄 Ariza</option>
-                        <option value="shikoyat">⚠️ Shikoyat</option>
-                        <option value="taklif">💡 Taklif</option>
-                        <option value="muammo">🔴 Muammo</option>
-                        <option value="boshqa">📌 Boshqa</option>
-                    </select>
+                <p class="muted" style="margin-bottom:12px;">Murojaat turini tanlang</p>
+                <input type="hidden" id="appealType" value="">
+                <div class="type-list">
+                    <div class="type-card" data-type="ariza" onclick="selectAppealType('ariza')">
+                        <div class="icon-box icon-blue"><i class="fas fa-file-alt"></i></div>
+                        <div class="row-text"><div class="row-title">ARIZA</div><div class="row-sub">Rasmiy ariza yuborish</div></div>
+                    </div>
+                    <div class="type-card" data-type="shikoyat" onclick="selectAppealType('shikoyat')">
+                        <div class="icon-box icon-orange"><i class="fas fa-triangle-exclamation"></i></div>
+                        <div class="row-text"><div class="row-title">SHIKOYAT</div><div class="row-sub">Shikoyat yuborish</div></div>
+                    </div>
+                    <div class="type-card" data-type="taklif" onclick="selectAppealType('taklif')">
+                        <div class="icon-box icon-green"><i class="fas fa-lightbulb"></i></div>
+                        <div class="row-text"><div class="row-title">TAKLIF</div><div class="row-sub">Taklif va tashabbus bildirish</div></div>
+                    </div>
+                    <div class="type-card" data-type="muammo" onclick="selectAppealType('muammo')">
+                        <div class="icon-box icon-red"><i class="fas fa-circle-exclamation"></i></div>
+                        <div class="row-text"><div class="row-title">MUAMMO</div><div class="row-sub">Muammo haqida xabar berish</div></div>
+                    </div>
+                    <div class="type-card" data-type="boshqa" onclick="selectAppealType('boshqa')">
+                        <div class="icon-box icon-purple"><i class="fas fa-ellipsis"></i></div>
+                        <div class="row-text"><div class="row-title">BOSHQA</div><div class="row-sub">Boshqa turdagi murojaat</div></div>
+                    </div>
                 </div>
                 <button class="btn" onclick="goToStep(2)">Keyingi →</button>
             </div>
-            <!-- 2-qadam: Murojaat mazmuni -->
             <div id="step2" class="step-content" style="display:none;">
                 <div class="form-group">
                     <label>Mavzu</label>
-                    <input type="text" id="appealSubject" placeholder="Murojaat mavzusi">
+                    <input type="text" id="appealSubject" placeholder="Murojaat mavzusini kiriting">
                 </div>
                 <div class="form-group">
-                    <label>Murojaat mazmuni</label>
-                    <textarea id="appealDesc" placeholder="Vaziyatni batafsil yozing..." required></textarea>
+                    <label>Murojaatingiz</label>
+                    <textarea id="appealDesc" placeholder="Muammo yoki taklifingizni batafsil yozing..." required></textarea>
                 </div>
                 <div class="btn-row">
                     <button class="btn btn-secondary" onclick="goToStep(1)">← Orqaga</button>
                     <button class="btn" onclick="goToStep(3)">Keyingi →</button>
                 </div>
             </div>
-            <!-- 3-qadam: Qo'shimcha ma'lumot -->
             <div id="step3" class="step-content" style="display:none;">
                 <div class="form-group">
                     <label>Hudud</label>
@@ -468,10 +482,9 @@
                     <button class="btn" onclick="goToStep(4)">Keyingi →</button>
                 </div>
             </div>
-            <!-- 4-qadam: Tasdiqlash -->
             <div id="step4" class="step-content" style="display:none;">
                 <p><strong>Murojaatni yuborishga tayyormisiz?</strong></p>
-                <div style="background:var(--primary-bg); padding:12px; border-radius:8px; margin:12px 0;">
+                <div style="background:var(--blue-bg); padding:12px; border-radius:12px; margin:12px 0;">
                     <p><strong>Mavzu:</strong> <span id="confirmSubject"></span></p>
                     <p><strong>Turi:</strong> <span id="confirmType"></span></p>
                     <p><strong>Hudud:</strong> <span id="confirmRegion"></span></p>
@@ -488,10 +501,12 @@
         </div>
     </div>
 
-    <!-- Mening murojaatlarim (filtrli) -->
     <div id="section-userAppeals" class="section">
+        <div class="screen-title">
+            <button class="back-btn" onclick="navigateTo('userHome')"><i class="fas fa-chevron-left"></i></button>
+            <h2>Mening murojaatlarim</h2>
+        </div>
         <div class="card">
-            <div class="card-title"><i class="fas fa-list-ul"></i> Mening murojaatlarim</div>
             <div class="filter-row">
                 <select id="userAppealFilter" onchange="renderUserAppeals()">
                     <option value="all">Barchasi</option>
@@ -504,29 +519,76 @@
         </div>
     </div>
 
+    <div id="section-userNotifications" class="section">
+        <div class="screen-title">
+            <button class="back-btn" onclick="navigateTo('userHome')"><i class="fas fa-chevron-left"></i></button>
+            <h2>Bildirishnomalar</h2>
+        </div>
+        <div class="card">
+            <div id="userNotification">Hozircha xabarnoma yo‘q.</div>
+        </div>
+    </div>
+
+    <div id="section-userContact" class="section">
+        <div class="screen-title">
+            <button class="back-btn" onclick="navigateTo('userHome')"><i class="fas fa-chevron-left"></i></button>
+            <h2>Aloqa</h2>
+        </div>
+        <div class="card">
+            <div class="contact-row">
+                <div class="icon-box icon-blue"><i class="fas fa-phone"></i></div>
+                <div><div class="c-title">Ishonch telefoni</div><div class="c-sub">+998 71 000 00 00</div></div>
+            </div>
+            <div class="contact-row">
+                <div class="icon-box icon-orange"><i class="fas fa-location-dot"></i></div>
+                <div><div class="c-title">Manzil</div><div class="c-sub">Guliston shahri, Sirdaryo viloyati FVB boshqarmasi</div></div>
+            </div>
+            <div class="contact-row">
+                <div class="icon-box icon-green"><i class="fas fa-clock"></i></div>
+                <div><div class="c-title">Ish vaqti</div><div class="c-sub">Dushanba–Juma, 09:00–18:00</div></div>
+            </div>
+            <div class="contact-row">
+                <div class="icon-box icon-purple"><i class="fab fa-telegram"></i></div>
+                <div><div class="c-title">Telegram bot</div><div class="c-sub">@sirdaryoFVBgamurojaat_bot</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-userAbout" class="section">
+        <div class="screen-title">
+            <button class="back-btn" onclick="navigateTo('userHome')"><i class="fas fa-chevron-left"></i></button>
+            <h2>Platforma haqida</h2>
+        </div>
+        <div class="card">
+            <div class="card-title"><i class="fas fa-shield-halved"></i> Murojaatchi paneli</div>
+            <p class="muted">Ushbu mini ilova orqali Sirdaryo viloyati FVB boshqarma boshlig'iga rasmiy ariza, shikoyat, taklif yoki muammo haqida murojaat yuborishingiz mumkin.</p>
+            <div style="margin-top:12px;">
+                <div class="about-row"><i class="fas fa-user-shield"></i><div>Murojaatingiz "Maxfiy" belgilansa, faqat mas'ul xodimlar ko‘radi.</div></div>
+                <div class="about-row"><i class="fas fa-hourglass-half"></i><div>Har bir murojaat 15 kun ichida ko‘rib chiqiladi.</div></div>
+                <div class="about-row"><i class="fas fa-bell"></i><div>Javob berilganda sizga bot orqali xabar yuboriladi.</div></div>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== ADMIN SECTION ===== -->
-    <!-- Admin Dashboard -->
     <div id="section-adminDashboard" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-chart-pie"></i> Rahbar nazorati</div>
-            <!-- Statistikalar -->
             <div style="margin-bottom:12px;">
                 <div class="stat-grid-3">
-                    <div class="stat-item primary"><span class="icon">📊</span><div class="number" id="statTotal">0</div><div class="label">Jami murojaat</div></div>
-                    <div class="stat-item warning"><span class="icon">🆕</span><div class="number" id="statNew">0</div><div class="label">Yangi</div></div>
-                    <div class="stat-item"><span class="icon">🔍</span><div class="number" id="statInProgress">0</div><div class="label">Nazoratda</div></div>
+                    <div class="stat-item primary"><span class="icon">📊</span><div class="number" id="statTotal">0</div><div class="label">Jami murojaatlar</div></div>
+                    <div class="stat-item warning"><span class="icon">🆕</span><div class="number" id="statNew">0</div><div class="label">Yangi murojaatlar</div></div>
+                    <div class="stat-item"><span class="icon">🔍</span><div class="number" id="statInProgress">0</div><div class="label">Jarayondagi</div></div>
                 </div>
                 <div class="stat-grid" style="margin-top:8px;">
                     <div class="stat-item warning"><span class="icon">⏳</span><div class="number" id="statNearDeadline">0</div><div class="label">Muddati yaqin</div></div>
                     <div class="stat-item danger"><span class="icon">🚨</span><div class="number" id="statOverdue">0</div><div class="label">Muddati o‘tgan</div></div>
                 </div>
             </div>
-            <!-- Top muammolar -->
             <div style="margin-top:12px;">
                 <div class="card-title" style="font-size:14px;"><i class="fas fa-fire"></i> Top muammolar</div>
                 <div id="topProblemsList"></div>
             </div>
-            <!-- Grafiklar -->
             <div class="chart-row" style="margin-top:12px;">
                 <div class="chart-box"><canvas id="statsChart"></canvas></div>
                 <div class="chart-box"><canvas id="statsChartDoughnut"></canvas></div>
@@ -535,7 +597,6 @@
         <button class="btn btn-sm btn-outline" onclick="navigateTo('adminAppeals')"><i class="fas fa-list"></i> Barcha murojaatlarni ko‘rish</button>
     </div>
 
-    <!-- Barcha murojaatlar (admin) -->
     <div id="section-adminAppeals" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-tasks"></i> Barcha murojaatlar</div>
@@ -552,12 +613,11 @@
         </div>
     </div>
 
-    <!-- Murojaat tafsilotlari (admin) -->
     <div id="section-adminAppealDetail" class="section">
         <div class="card">
             <div class="card-title"><i class="fas fa-info-circle"></i> Murojaat tafsilotlari</div>
             <div id="appealDetailContent"></div>
-            <hr style="margin:16px 0; border-color:var(--primary-border);">
+            <hr style="margin:16px 0; border-color:var(--blue-border);">
             <div class="form-group">
                 <label>📅 Muddatni uzaytirish</label>
                 <div class="flex-row">
@@ -566,7 +626,7 @@
                 </div>
                 <div style="font-size:13px; color:#5a6b7a; margin-top:4px;">Joriy muddat: <span id="currentDeadlineDisplay"></span></div>
             </div>
-            <hr style="margin:16px 0; border-color:var(--primary-border);">
+            <hr style="margin:16px 0; border-color:var(--blue-border);">
             <div class="form-group">
                 <label>Javob matni</label>
                 <textarea id="adminResponseText" placeholder="Javobingizni yozing..." rows="4"></textarea>
@@ -580,16 +640,18 @@
     </div>
 </div>
 
-<!-- BOTTOM NAV -->
 <nav class="bottom-nav" id="bottomNav">
     <button class="nav-item user-nav" data-section="userHome" onclick="navigateTo('userHome')">
-        <i class="fas fa-home"></i> <span>Bosh</span>
+        <i class="fas fa-house"></i> <span>Bosh sahifa</span>
     </button>
     <button class="nav-item user-nav" data-section="userNewAppeal" onclick="navigateTo('userNewAppeal')">
-        <i class="fas fa-plus-circle"></i> <span>Yangi</span>
+        <i class="fas fa-paper-plane"></i> <span>Murojaat</span>
     </button>
     <button class="nav-item user-nav" data-section="userAppeals" onclick="navigateTo('userAppeals')">
-        <i class="fas fa-list"></i> <span>Murojaatlar</span>
+        <i class="fas fa-list-ul"></i> <span>Murojaatlarim</span>
+    </button>
+    <button class="nav-item user-nav" data-section="userNotifications" onclick="navigateTo('userNotifications')">
+        <i class="fas fa-bell"></i> <span>Bildirishnoma</span>
     </button>
     <button class="nav-item admin-nav hidden" data-section="adminDashboard" onclick="navigateTo('adminDashboard')">
         <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
@@ -604,9 +666,18 @@
 </nav>
 
 <script>
-    // ==========================
-    // TELEGRAM INTEGRATION
-    // ==========================
+    const TYPE_META = {
+        ariza:    { label: 'Ariza',    icon: 'fa-file-alt',            chip: 'chip-blue'   },
+        shikoyat: { label: 'Shikoyat', icon: 'fa-triangle-exclamation', chip: 'chip-orange' },
+        taklif:   { label: 'Taklif',   icon: 'fa-lightbulb',           chip: 'chip-green'  },
+        muammo:   { label: 'Muammo',   icon: 'fa-circle-exclamation',  chip: 'chip-red'    },
+        boshqa:   { label: 'Boshqa',   icon: 'fa-ellipsis',            chip: 'chip-purple' }
+    };
+    function typeChipHtml(type) {
+        const meta = TYPE_META[type] || { label: type, icon: 'fa-circle', chip: 'chip-blue' };
+        return `<span class="type-chip ${meta.chip}"><i class="fas ${meta.icon}"></i>${meta.label}</span>`;
+    }
+
     const tg = window.Telegram.WebApp;
     tg.ready();
     let currentUser = null;
@@ -631,13 +702,23 @@
 
     document.getElementById('userName').textContent = currentUser.firstName + ' ' + currentUser.lastName;
 
-    // ==========================
-    // 4 BOSQICHLI FORMA
-    // ==========================
     let currentStep = 1;
     let selectedFile = null;
+    const STEP_TITLES = { 1: 'Murojaat turi', 2: 'Murojaat mazmuni', 3: 'Qo‘shimcha ma’lumot', 4: 'Tasdiqlash' };
+
+    function selectAppealType(type) {
+        document.getElementById('appealType').value = type;
+        document.querySelectorAll('.type-card').forEach(card => {
+            card.classList.toggle('selected', card.getAttribute('data-type') === type);
+        });
+        goToStep(2);
+    }
 
     function goToStep(step) {
+        if (step === 2 && !document.getElementById('appealType').value) {
+            tg.showPopup({ title: 'Xatolik', message: 'Iltimos, murojaat turini tanlang!', buttons: [{type:'ok'}] });
+            return;
+        }
         currentStep = step;
         document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
         document.getElementById('step' + step).style.display = 'block';
@@ -646,12 +727,12 @@
             if (i + 1 === step) dot.classList.add('active');
             else if (i + 1 < step) dot.classList.add('done');
         });
-        // 4-qadamda ma'lumotlarni ko'rsatish
+        const titleEl = document.getElementById('stepTitle');
+        if (titleEl) titleEl.textContent = STEP_TITLES[step] || 'Yangi murojaat';
         if (step === 4) {
             document.getElementById('confirmSubject').textContent = document.getElementById('appealSubject').value || 'Ko‘rsatilmagan';
-            const typeMap = { 'ariza':'Ariza', 'shikoyat':'Shikoyat', 'taklif':'Taklif', 'muammo':'Muammo', 'boshqa':'Boshqa' };
             const typeVal = document.getElementById('appealType').value;
-            document.getElementById('confirmType').textContent = typeMap[typeVal] || typeVal;
+            document.getElementById('confirmType').textContent = (TYPE_META[typeVal] && TYPE_META[typeVal].label) || typeVal;
             document.getElementById('confirmRegion').textContent = document.getElementById('appealRegion').value || 'Ko‘rsatilmagan';
             document.getElementById('confirmAddress').textContent = document.getElementById('appealAddress').value || 'Ko‘rsatilmagan';
             const privacy = document.querySelector('input[name="privacy"]:checked');
@@ -661,12 +742,6 @@
         }
     }
 
-    // Bosqich 1 da Enter bilan keyingi bosqichga o'tish
-    document.getElementById('appealType').addEventListener('change', function() {
-        if (this.value) goToStep(2);
-    });
-
-    // Fayl yuklash
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -682,16 +757,14 @@
         document.getElementById('filePreview').style.display = 'none';
     }
 
-    // Maxfiylik hint
     document.querySelectorAll('input[name="privacy"]').forEach(el => {
         el.addEventListener('change', function() {
-            document.getElementById('privacyHint').textContent = this.value === 'open' 
-                ? 'Murojaatingiz hamma uchun ochiq bo‘ladi' 
+            document.getElementById('privacyHint').textContent = this.value === 'open'
+                ? 'Murojaatingiz hamma uchun ochiq bo‘ladi'
                 : 'Faqat masʼul xodimlar ko‘radi';
         });
     });
 
-    // Murojaat yuborish
     async function submitAppeal() {
         if (!document.getElementById('appealType').value) {
             tg.showPopup({ title: 'Xatolik', message: 'Iltimos, murojaat turini tanlang!', buttons: [{type:'ok'}] });
@@ -746,7 +819,13 @@
             const data = await response.json();
             if (response.ok) {
                 tg.showPopup({ title: 'Bajarildi', message: 'Murojaatingiz qabul qilindi!', buttons: [{type:'ok'}] });
-                document.getElementById('appealForm')?.reset();
+                document.getElementById('appealType').value = '';
+                document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+                document.getElementById('appealSubject').value = '';
+                document.getElementById('appealDesc').value = '';
+                document.getElementById('appealRegion').value = '';
+                document.getElementById('appealAddress').value = '';
+                document.getElementById('appealAnonymous').checked = false;
                 removeFile();
                 navigateTo('userAppeals');
             } else {
@@ -757,9 +836,6 @@
         }
     }
 
-    // ==========================
-    // ADMINLIKNI TEKSHIRISH
-    // ==========================
     async function checkAdminStatus() {
         try {
             const response = await fetch('/api/check-admin', {
@@ -800,9 +876,6 @@
         }
     }
 
-    // ==========================
-    // NAVIGATSION
-    // ==========================
     function setupNavigation() {
         const admin = isAdminFlag;
         document.querySelectorAll('.user-nav').forEach(el => {
@@ -823,7 +896,7 @@
             tg.showPopup({ title: 'Ruxsat yo‘q', message: 'Siz admin emassiz!', buttons: [{type:'ok'}] });
             return;
         }
-        const userSections = ['userNewAppeal', 'userAppeals'];
+        const userSections = ['userNewAppeal', 'userAppeals', 'userNotifications', 'userContact', 'userAbout'];
         if (userSections.includes(sectionId) && isAdminFlag) {
             tg.showPopup({ title: 'Ruxsat yo‘q', message: 'Admin murojaat yo‘llay olmaysiz.', buttons: [{type:'ok'}] });
             return;
@@ -838,14 +911,10 @@
         if (sectionId === 'userAppeals') renderUserAppeals();
         if (sectionId === 'adminDashboard') renderAdminDashboard();
         if (sectionId === 'adminAppeals') renderAdminAppeals();
-        if (sectionId === 'userHome') renderNotifications();
-        // Bosqichni reset qilish
+        if (sectionId === 'userNotifications') renderNotifications();
         if (sectionId === 'userNewAppeal') goToStep(1);
     }
 
-    // ==========================
-    // API SO'ROVLARI
-    // ==========================
     const API_BASE = '/api';
 
     async function apiFetch(endpoint, options = {}) {
@@ -866,16 +935,13 @@
         try { return await response.json(); } catch { return null; }
     }
 
-    // ==========================
-    // XABARNOMALAR
-    // ==========================
     async function renderNotifications() {
         try {
             const allAppeals = await apiFetch('/appeals');
             const myAppeals = allAppeals.filter(a => a.userId === currentUser.id && a.adminResponse);
             const container = document.getElementById('userNotification');
             if (!myAppeals.length) {
-                container.innerHTML = 'Hozircha xabarnoma yo‘q.';
+                container.innerHTML = '<p class="muted">Hozircha xabarnoma yo‘q.</p>';
                 return;
             }
             let html = '';
@@ -883,8 +949,8 @@
             myAppeals.forEach(a => {
                 html += `
                     <div class="notification-item">
-                        <div><strong>#${a.id}</strong> - ${a.subject || a.type}</div>
-                        <div>${a.adminResponse}</div>
+                        <div><strong>#${a.id}</strong> - ${a.subject || a.type} ${typeChipHtml(a.type)}</div>
+                        <div style="margin-top:4px;">${a.adminResponse}</div>
                         <div class="time">${new Date(a.responseDate).toLocaleString()}</div>
                     </div>
                 `;
@@ -893,9 +959,6 @@
         } catch (err) { console.error(err); }
     }
 
-    // ==========================
-    // FOYDALANUVCHI MUROJAATLARI (filtrli)
-    // ==========================
     async function renderUserAppeals() {
         if (isAdminFlag) return;
         const container = document.getElementById('userAppealsList');
@@ -927,7 +990,10 @@
                 }
                 html += `
                     <div class="appeal-item">
-                        <div><strong>#${a.id}</strong> - ${a.subject || a.type}</div>
+                        <div class="top-row">
+                            <span><span class="appeal-id">#${a.id}</span> - ${a.subject || ''}</span>
+                            ${typeChipHtml(a.type)}
+                        </div>
                         <div style="font-size:13px;">${a.description.substring(0,60)}${a.description.length>60?'...':''}</div>
                         <div class="meta">
                             <span><span class="badge ${badgeCls}">${label}</span></span>
@@ -937,7 +1003,7 @@
                             <span>${new Date(a.createdAt).toLocaleDateString()}</span>
                             ${a.file ? '<span><i class="fas fa-paperclip"></i> 1 fayl</span>' : ''}
                         </div>
-                        ${a.adminResponse ? `<div style="margin-top:6px; background:var(--primary-bg); padding:8px; border-radius:8px; font-size:13px;"><strong>Javob:</strong> ${a.adminResponse}</div>` : ''}
+                        ${a.adminResponse ? `<div style="margin-top:6px; background:var(--blue-bg); padding:8px; border-radius:8px; font-size:13px;"><strong>Javob:</strong> ${a.adminResponse}</div>` : ''}
                     </div>
                 `;
             });
@@ -948,9 +1014,6 @@
         }
     }
 
-    // ==========================
-    // ADMIN DASHBOARD
-    // ==========================
     let chartInstance = null, chartDoughnut = null;
 
     async function renderAdminDashboard() {
@@ -960,7 +1023,6 @@
             const total = appeals.length;
             const newCount = appeals.filter(a => a.status === 'pending').length;
             const inProgress = appeals.filter(a => a.status === 'in_progress').length;
-            const resolved = appeals.filter(a => a.status === 'resolved').length;
             const now = new Date();
             const nearDeadline = appeals.filter(a => {
                 if (a.status === 'resolved') return false;
@@ -978,22 +1040,21 @@
             document.getElementById('statNearDeadline').textContent = nearDeadline;
             document.getElementById('statOverdue').textContent = overdue;
 
-            // Top muammolar
             const typeMap = {};
             appeals.forEach(a => { typeMap[a.type] = (typeMap[a.type] || 0) + 1; });
             const sorted = Object.entries(typeMap).sort((a,b) => b[1] - a[1]);
             const top5 = sorted.slice(0,5);
-            const typeNames = { 'ariza':'Ariza', 'shikoyat':'Shikoyat', 'taklif':'Taklif', 'muammo':'Muammo', 'boshqa':'Boshqa' };
             const container = document.getElementById('topProblemsList');
             if (!top5.length) {
                 container.innerHTML = '<p style="color:#5a6b7a;">Hali murojaat yo‘q.</p>';
             } else {
                 let html = '';
                 top5.forEach(([key, count], index) => {
+                    const meta = TYPE_META[key] || { label: key };
                     html += `
                         <div class="top-problem-item">
                             <span class="rank">${index + 1}</span>
-                            <span class="problem-name">${typeNames[key] || key}</span>
+                            <span class="problem-name">${meta.label}</span>
                             <span class="count">${count}</span>
                         </div>
                     `;
@@ -1001,14 +1062,14 @@
                 container.innerHTML = html;
             }
 
-            // Grafiklar
+            const typeNames = { ariza:'Ariza', shikoyat:'Shikoyat', taklif:'Taklif', muammo:'Muammo', boshqa:'Boshqa' };
             const ctx = document.getElementById('statsChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(typeMap).map(k => typeNames[k] || k),
-                    datasets: [{ label: 'Murojaat turlari', data: Object.values(typeMap), backgroundColor: '#4A90D9', borderRadius: 6 }]
+                    datasets: [{ label: 'Murojaat turlari', data: Object.values(typeMap), backgroundColor: '#2f6fe0', borderRadius: 6 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
@@ -1018,16 +1079,13 @@
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(typeMap).map(k => typeNames[k] || k),
-                    datasets: [{ data: Object.values(typeMap), backgroundColor: ['#4A90D9', '#f39c12', '#27ae60', '#e74c3c', '#9b59b6'] }]
+                    datasets: [{ data: Object.values(typeMap), backgroundColor: ['#2f6fe0', '#f5a524', '#17a374', '#e5484d', '#8b5cf6'] }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
             });
         } catch (err) { console.error(err); }
     }
 
-    // ==========================
-    // ADMIN MUROJAATLAR RO'YXATI
-    // ==========================
     let allAppealsCache = [];
 
     async function renderAdminAppeals() {
@@ -1070,8 +1128,11 @@
             const badgeCls = badgeMap[a.status] || 'badge-pending';
             const isOverdue = a.status !== 'resolved' && new Date(a.deadline) < new Date();
             html += `
-                <div class="appeal-item" style="${isOverdue ? 'border-left-color: var(--danger);' : ''}">
-                    <div><strong>#${a.id}</strong> - ${a.subject || a.type} ${isOverdue ? '🚨' : ''}</div>
+                <div class="appeal-item" style="${isOverdue ? 'border-left:3px solid var(--red);' : ''}">
+                    <div class="top-row">
+                        <span><span class="appeal-id">#${a.id}</span> - ${a.subject || ''} ${isOverdue ? '🚨' : ''}</span>
+                        ${typeChipHtml(a.type)}
+                    </div>
                     <div style="font-size:13px;">${a.description.substring(0,50)}...</div>
                     <div class="meta">
                         <span><span class="badge ${badgeCls}">${label}</span></span>
@@ -1087,9 +1148,6 @@
         container.innerHTML = html;
     }
 
-    // ==========================
-    // O'CHIRISH
-    // ==========================
     async function deleteAppeal(appealId) {
         if (!isAdminFlag) return;
         tg.showPopup({
@@ -1124,9 +1182,6 @@
         deleteAppeal(currentAppealId);
     }
 
-    // ==========================
-    // MUDDATNI UZAYTIRISH
-    // ==========================
     async function extendDeadline() {
         if (!isAdminFlag || !currentAppealId) return;
         const days = parseInt(document.getElementById('extendDays').value);
@@ -1155,9 +1210,6 @@
         }
     }
 
-    // ==========================
-    // MUROJAAT TAFSILOTI
-    // ==========================
     let currentAppealId = null;
 
     async function openAppealDetail(appealId) {
@@ -1178,9 +1230,9 @@
             let fileHtml = '';
             if (appeal.file) {
                 fileHtml = `
-                    <div style="margin:8px 0; background:var(--primary-bg); padding:8px; border-radius:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <i class="fas fa-file" style="color:var(--primary);"></i>
-                        <a href="${appeal.file.data}" download="${appeal.file.name}" style="color:var(--primary-dark); font-weight:600;">${appeal.file.name}</a>
+                    <div style="margin:8px 0; background:var(--blue-bg); padding:8px; border-radius:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <i class="fas fa-file" style="color:var(--blue);"></i>
+                        <a href="${appeal.file.data}" download="${appeal.file.name}" style="color:var(--blue-dark); font-weight:600;">${appeal.file.name}</a>
                         <a href="${appeal.file.data}" download="${appeal.file.name}" class="btn btn-sm" style="width:auto; padding:4px 12px; margin-left:auto;">⬇ Yuklab olish</a>
                     </div>
                 `;
@@ -1189,7 +1241,7 @@
                 <div class="detail-section"><div class="label">👤 Foydalanuvchi</div><div class="value">${appeal.userName}</div></div>
                 <div class="detail-section"><div class="label">📋 F.I.SH</div><div class="value">${appeal.fullName || 'Kiritilmagan'}</div></div>
                 <div class="detail-section"><div class="label">💼 Lavozim</div><div class="value">${appeal.position || 'Kiritilmagan'}</div></div>
-                <div class="detail-section"><div class="label">📌 Turi</div><div class="value">${appeal.type}</div></div>
+                <div class="detail-section"><div class="label">📌 Turi</div><div class="value">${typeChipHtml(appeal.type)}</div></div>
                 <div class="detail-section"><div class="label">📝 Mavzu</div><div class="value">${appeal.subject || 'Kiritilmagan'}</div></div>
                 <div class="detail-section"><div class="label">📍 Hudud</div><div class="value">${appeal.region}</div></div>
                 <div class="detail-section"><div class="label">🏠 Manzil</div><div class="value">${appeal.address || 'Kiritilmagan'}</div></div>
@@ -1200,7 +1252,7 @@
                 <div class="detail-section"><div class="label">📅 Yuborilgan</div><div class="value">${new Date(appeal.createdAt).toLocaleString()}</div></div>
                 <div class="detail-section"><div class="label">⏳ Muddat</div><div class="value">${new Date(appeal.deadline).toLocaleDateString()}</div></div>
                 ${fileHtml ? `<div class="detail-section"><div class="label">📎 Fayl</div><div class="value">${fileHtml}</div></div>` : ''}
-                ${appeal.adminResponse ? `<div class="detail-section"><div class="label">💬 Javob</div><div class="value" style="background:var(--primary-bg); padding:8px; border-radius:8px;">${appeal.adminResponse}</div></div>` : ''}
+                ${appeal.adminResponse ? `<div class="detail-section"><div class="label">💬 Javob</div><div class="value" style="background:var(--blue-bg); padding:8px; border-radius:8px;">${appeal.adminResponse}</div></div>` : ''}
             `;
             document.getElementById('currentDeadlineDisplay').textContent = new Date(appeal.deadline).toLocaleDateString();
             document.getElementById('adminResponseText').value = appeal.adminResponse || '';
@@ -1210,9 +1262,6 @@
         }
     }
 
-    // ==========================
-    // JAVOB YUBORISH (ADMIN)
-    // ==========================
     async function submitAdminResponse() {
         if (!isAdminFlag || !currentAppealId) return;
         const text = document.getElementById('adminResponseText').value.trim();
@@ -1237,9 +1286,6 @@
         }
     }
 
-    // ==========================
-    // ISHGA TUSHIRISH
-    // ==========================
     checkAdminStatus();
     console.log('Joriy user:', currentUser.id);
 </script>
