@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const BOT_USERNAME = process.env.BOT_USERNAME || 'SirdaryoFVBgamurojaat_bot';
+const BOT_USERNAME = process.env.BOT_USERNAME || 'sirdaryoFVBgamurojaat_bot';
 
 console.log('🔍 BOT_TOKEN mavjudmi?', BOT_TOKEN ? 'HA' : 'YO\'Q');
 console.log('🤖 BOT_USERNAME:', BOT_USERNAME);
@@ -81,7 +81,12 @@ app.post('/webhook', async (req, res) => {
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
 app.post('/api/appeals', async (req, res) => {
-    const { fullName, position, type, region, description, file, userId, userName } = req.body;
+    const { 
+        fullName, position, type, region, description, 
+        subject, address, privacy, anonymous,
+        file, userId, userName 
+    } = req.body;
+    
     const newAppeal = {
         id: nextId++,
         fullName: fullName || '',
@@ -89,6 +94,10 @@ app.post('/api/appeals', async (req, res) => {
         type: type || 'boshqa',
         region: region || '',
         description: description || '',
+        subject: subject || '',
+        address: address || '',
+        privacy: privacy || 'open',
+        anonymous: anonymous || false,
         file: file || null,
         userId: userId || null,
         userName: userName || 'Anonim',
@@ -101,7 +110,7 @@ app.post('/api/appeals', async (req, res) => {
     appeals.push(newAppeal);
     saveJSON(DATA_FILE, appeals);
 
-    // Adminlarga xabar yuborish (Telegram ilovasida ochiladigan link bilan)
+    // Adminlarga xabar yuborish
     try {
         const adminMessage = 
 `📩 *Yangi murojaat #${newAppeal.id} keldi!*
@@ -109,6 +118,7 @@ app.post('/api/appeals', async (req, res) => {
 👤 *Foydalanuvchi:* ${newAppeal.userName}
 📌 *Turi:* ${newAppeal.type}
 📍 *Tuzilma:* ${newAppeal.region}
+📝 *Mavzu:* ${newAppeal.subject || 'Ko‘rsatilmagan'}
 📝 *Tavsif:* ${newAppeal.description.substring(0, 100)}${newAppeal.description.length > 100 ? '...' : ''}
 
 🔗 *Ko‘rish uchun:* https://t.me/${BOT_USERNAME}?start=appeal_${newAppeal.id}`;
