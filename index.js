@@ -13,6 +13,7 @@ console.log('🤖 BOT_USERNAME:', BOT_USERNAME);
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
+const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 
 function loadJSON(file) {
     try {
@@ -31,18 +32,19 @@ function saveJSON(file, data) {
 
 let appeals = loadJSON(DATA_FILE);
 let users = loadJSON(USERS_FILE);
+let messages = loadJSON(MESSAGES_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 
-const ADMIN_IDS = [7117334799]; // O'zingizning admin ID laringiz
+const ADMIN_IDS = [7117334799, 72259146]; // O'zingizning admin ID laringiz
 
-async function sendTelegramMessage(chatId, text) {
+async function sendTelegramMessage(chatId, text, extra = {}) {
     if (!BOT_TOKEN) return false;
     try {
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+            body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', ...extra })
         });
         const data = await res.json();
         return data.ok === true;
@@ -52,15 +54,27 @@ async function sendTelegramMessage(chatId, text) {
     }
 }
 
+// Foydalanuvchiga xabar yuborish (matn)
+async function sendMessageToUser(userId, text) {
+    return sendTelegramMessage(userId, text);
+}
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
+// ----- WEBHOOK (barcha xabarlarni qabul qiladi) -----
 app.post('/webhook', async (req, res) => {
     const update = req.body;
-    if (update.message && update.message.text === '/start') {
-        const chatId = update.message.chat.id;
-        const from = update.message.from;
+    console.log('📥 Webhook so‘rovi:', JSON.stringify(update, null, 2));
+
+    // Agar xabar bo'lsa
+    if (update.message) {
+        const msg = update.message;
+        const chatId = msg.chat.id;
+        const from = msg.from;
+
+        // Foydalanuvchini ro'yxatga olish (agar mavjud bo'lmasa)
         const user = {
             id: from.id,
             firstName: from.first_name || '',
@@ -72,21 +86,69 @@ app.post('/webhook', async (req, res) => {
         if (!existing) {
             users.push(user);
             saveJSON(USERS_FILE, users);
+            console.log(`✅ Yangi foydalanuvchi ro'yxatdan o'tdi: ${user.id}`);
         }
-        await sendTelegramMessage(chatId, `Assalomu alaykum, ${user.firstName}! ✅ Siz ro'yxatdan o'tdingiz.`);
+
+        // /start buyrug'i
+        if (msg.text && msg.text === '/start') {
+            await sendTelegramMessage(chatId, `Assalomu alaykum, ${user.firstName}! ✅ Siz ro'yxatdan o'tdingiz.\n\n📱 Murojaat yuborish uchun pastdagi tugmani bosing.`);
+            res.sendStatus(200);
+            return;
+        }
+
+        // Foydalanuvchi yuborgan xabarni saqlash (matn, audio, video_note)
+        let messageType = 'text';
+        let content = null;
+        let fileId = null;
+
+        if (msg.text) {
+            messageType = 'text';
+            content = msg.text;
+        } else if (msg.audio) {
+            messageType = 'audio';
+            fileId = msg.audio.file_id;
+            content = msg.audio.file_name || 'Audio';
+        } else if (msg.video_note) {
+            messageType = 'video_note';
+            fileId = msg.video_note.file_id;
+            content = 'Dumaloq video';
+        } else {
+            // Boshqa turdagi xabarlarni e'tiborsiz qoldiramiz (yoki keyin qo'shamiz)
+            res.sendStatus(200);
+            return;
+        }
+
+        const newMessage = {
+            id: messages.length + 1,
+            userId: from.id,
+            userName: (from.first_name || '') + ' ' + (from.last_name || ''),
+            type: messageType,
+            content: content,
+            fileId: fileId || null,
+            createdAt: new Date().toISOString()
+        };
+        messages.push(newMessage);
+        saveJSON(MESSAGES_FILE, messages);
+        console.log(`📩 Yangi xabar saqlandi: ${messageType} dan ${user.id}`);
+
+        // Adminlarga xabar kelganligi haqida xabar yuborish (faqat matn yoki audio yoki video)
+        const adminText = `📩 *Yangi xabar!*\n\n👤 *Foydalanuvchi:* ${user.firstName} ${user.lastName}\n📌 *Tur:* ${messageType}\n📝 *Matn:* ${msg.text || 'Audio/Video'}\n🕒 *Vaqt:* ${new Date().toLocaleString()}`;
+        ADMIN_IDS.forEach(async (adminId) => {
+            await sendTelegramMessage(adminId, adminText);
+        });
+
+        res.sendStatus(200);
+        return;
     }
+
     res.sendStatus(200);
 });
 
+// ----- API: murojaatlar (oldingidek) -----
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
 app.post('/api/appeals', async (req, res) => {
-    const { 
-        fullName, position, type, region, description, 
-        subject, address, privacy, anonymous,
-        file, userId, userName 
-    } = req.body;
-    
+    const { fullName, position, type, region, description, subject, address, privacy, anonymous, file, userId, userName } = req.body;
     const newAppeal = {
         id: nextId++,
         fullName: fullName || '',
@@ -137,6 +199,7 @@ app.post('/api/appeals', async (req, res) => {
     res.status(201).json(newAppeal);
 });
 
+// ----- API: ADMIN (murojaatlar, foydalanuvchilar, xabarlar) -----
 app.get('/api/admin/appeals', (req, res) => res.json(appeals));
 
 app.put('/api/admin/appeals/:id', (req, res) => {
@@ -195,11 +258,61 @@ app.post('/api/admin/notify', async (req, res) => {
     }
 });
 
+// ----- YANGI: Admin broadcast (barcha foydalanuvchilarga xabar yuborish) -----
+app.post('/api/admin/broadcast', async (req, res) => {
+    const { message } = req.body;
+    if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: 'Xabar matnini kiriting!' });
+    }
+
+    // Admin tekshiruvi (xavfsizlik)
+    // Biz admin ekanligini tekshirish uchun so'rov yuboruvchi user ID ni olishimiz kerak.
+    // Buni frontenddan userId ni yuborish orqali yoki session orqali qilish mumkin.
+    // Hozircha qulaylik uchun frontenddan userId ni yuboramiz va tekshiramiz.
+    const { userId } = req.body;
+    if (!ADMIN_IDS.includes(Number(userId))) {
+        return res.status(403).json({ error: 'Ruxsat yo‘q! Faqat admin.' });
+    }
+
+    const allUsers = loadJSON(USERS_FILE);
+    const sentCount = 0;
+    const failed = [];
+
+    for (const user of allUsers) {
+        try {
+            await sendTelegramMessage(user.id, `📢 *Admin xabari:*\n\n${message}`);
+            sentCount++;
+        } catch (err) {
+            failed.push(user.id);
+            console.error(`Xabar yuborishda xatolik (${user.id}):`, err);
+        }
+    }
+
+    res.json({
+        success: true,
+        sent: sentCount,
+        failed: failed,
+        total: allUsers.length
+    });
+});
+
+// ----- YANGI: Foydalanuvchi xabarlarini olish (admin uchun) -----
+app.get('/api/admin/messages', (req, res) => {
+    // Admin tekshiruvi (oddiy)
+    const { userId } = req.query;
+    if (!ADMIN_IDS.includes(Number(userId))) {
+        return res.status(403).json({ error: 'Ruxsat yo‘q!' });
+    }
+    res.json(messages);
+});
+
+// ----- ADMINLIKNI TEKSHIRISH -----
 app.post('/api/check-admin', (req, res) => {
     const { userId } = req.body;
     res.json({ isAdmin: ADMIN_IDS.includes(Number(userId)) });
 });
 
+// ----- FRONTEND -----
 app.get('*', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });

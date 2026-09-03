@@ -593,6 +593,11 @@
                 <div class="chart-box"><canvas id="statsChart"></canvas></div>
                 <div class="chart-box"><canvas id="statsChartDoughnut"></canvas></div>
             </div>
+            <!-- Admin qo‘shimcha tugmalar -->
+            <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-sm btn-outline" onclick="navigateTo('adminBroadcast')"><i class="fas fa-bullhorn"></i> Xabar yuborish</button>
+                <button class="btn btn-sm btn-outline" onclick="navigateTo('adminMessages')"><i class="fas fa-inbox"></i> Foydalanuvchi xabarlari</button>
+            </div>
         </div>
         <button class="btn btn-sm btn-outline" onclick="navigateTo('adminAppeals')"><i class="fas fa-list"></i> Barcha murojaatlarni ko‘rish</button>
     </div>
@@ -636,6 +641,29 @@
                 <button class="btn btn-danger" style="flex:1;" onclick="deleteAppealFromDetail()"><i class="fas fa-trash"></i> O‘chirish</button>
             </div>
             <button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="navigateTo('adminAppeals')">◀ Orqaga</button>
+        </div>
+    </div>
+
+    <!-- Admin: Xabar yuborish (broadcast) -->
+    <div id="section-adminBroadcast" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-bullhorn"></i> Barcha foydalanuvchilarga xabar yuborish</div>
+            <div class="form-group">
+                <label>Xabar matni</label>
+                <textarea id="broadcastMessage" rows="4" placeholder="Barcha foydalanuvchilarga yuboriladigan xabar..."></textarea>
+            </div>
+            <button class="btn btn-success" onclick="sendBroadcast()"><i class="fas fa-paper-plane"></i> Yuborish</button>
+            <div id="broadcastResult" style="margin-top:10px;"></div>
+            <button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="navigateTo('adminDashboard')">◀ Orqaga</button>
+        </div>
+    </div>
+
+    <!-- Admin: Foydalanuvchi xabarlari -->
+    <div id="section-adminMessages" class="section">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-inbox"></i> Foydalanuvchilardan kelgan xabarlar</div>
+            <div id="userMessagesList">Yuklanmoqda...</div>
+            <button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="navigateTo('adminDashboard')">◀ Orqaga</button>
         </div>
     </div>
 </div>
@@ -891,7 +919,7 @@
     }
 
     function navigateTo(sectionId) {
-        const adminSections = ['adminDashboard', 'adminAppeals', 'adminAppealDetail'];
+        const adminSections = ['adminDashboard', 'adminAppeals', 'adminAppealDetail', 'adminBroadcast', 'adminMessages'];
         if (adminSections.includes(sectionId) && !isAdminFlag) {
             tg.showPopup({ title: 'Ruxsat yo‘q', message: 'Siz admin emassiz!', buttons: [{type:'ok'}] });
             return;
@@ -912,6 +940,7 @@
         if (sectionId === 'adminDashboard') renderAdminDashboard();
         if (sectionId === 'adminAppeals') renderAdminAppeals();
         if (sectionId === 'userNotifications') renderNotifications();
+        if (sectionId === 'adminMessages') renderUserMessages();
         if (sectionId === 'userNewAppeal') goToStep(1);
     }
 
@@ -1286,6 +1315,66 @@
         }
     }
 
+    // ----- YANGI: Broadcast -----
+    async function sendBroadcast() {
+        const message = document.getElementById('broadcastMessage').value.trim();
+        if (!message) {
+            tg.showPopup({ title: 'Xatolik', message: 'Xabar matnini kiriting!', buttons: [{type:'ok'}] });
+            return;
+        }
+        try {
+            const response = await fetch('/api/admin/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, userId: currentUser.id })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                document.getElementById('broadcastResult').innerHTML = `<div style="color:green;">✅ Xabar ${result.sent} ta foydalanuvchiga yuborildi. (Muvaffaqiyatsiz: ${result.failed.length})</div>`;
+                document.getElementById('broadcastMessage').value = '';
+            } else {
+                tg.showPopup({ title: 'Xatolik', message: result.error || 'Xatolik yuz berdi', buttons: [{type:'ok'}] });
+            }
+        } catch (err) {
+            tg.showPopup({ title: 'Xatolik', message: err.message, buttons: [{type:'ok'}] });
+        }
+    }
+
+    // ----- YANGI: Foydalanuvchi xabarlarini yuklash -----
+    async function renderUserMessages() {
+        if (!isAdminFlag) return;
+        const container = document.getElementById('userMessagesList');
+        container.innerHTML = 'Yuklanmoqda...';
+        try {
+            const response = await fetch(`/api/admin/messages?userId=${currentUser.id}`);
+            if (!response.ok) throw new Error('Server xatolik');
+            const messages = await response.json();
+            if (!messages.length) {
+                container.innerHTML = '<p class="muted">Hali foydalanuvchilardan xabar kelmagan.</p>';
+                return;
+            }
+            let html = '';
+            messages.slice().reverse().forEach(msg => {
+                const typeIcon = msg.type === 'audio' ? '🎵' : msg.type === 'video_note' ? '🎥' : '💬';
+                const contentDisplay = msg.type === 'text' ? msg.content : (msg.type === 'audio' ? '🎵 Audio' : '🎥 Dumaloq video');
+                html += `
+                    <div class="notification-item">
+                        <div><strong>${msg.userName}</strong> ${typeIcon}</div>
+                        <div style="font-size:13px;">${contentDisplay}</div>
+                        <div class="time">${new Date(msg.createdAt).toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (err) {
+            container.innerHTML = '<p>Xatolik yuz berdi.</p>';
+            console.error(err);
+        }
+    }
+
+    // ==========================
+    // ISHGA TUSHIRISH
+    // ==========================
     checkAdminStatus();
     console.log('Joriy user:', currentUser.id);
 </script>
