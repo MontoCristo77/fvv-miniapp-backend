@@ -36,7 +36,7 @@ let messages = loadJSON(MESSAGES_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 let nextMsgId = messages.length ? Math.max(...messages.map(m => m.id)) + 1 : 1;
 
-const ADMIN_IDS = [7117334799];
+const ADMIN_IDS = [7117334799,72259146]; // O'zingizning admin ID laringiz
 
 async function sendTelegramMessage(chatId, text, extra = {}) {
     if (!BOT_TOKEN) return false;
@@ -157,13 +157,11 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-// ----- API: fayl yuklab olish (fileId orqali) ----
+// ----- API: fayl yuklab olish (fileId orqali) -----
 app.get('/api/file/:fileId', async (req, res) => {
     const fileId = req.params.fileId;
     const fileUrl = await getFileUrl(fileId);
     if (fileUrl) {
-        // Brauzerda media ko'rsatish uchun redirect emas, balki proxylash kerak?
-        // Hozircha redirect, lekin agar media bo'lsa, uni ko'rsatish uchun iframe/video ishlatiladi.
         res.redirect(fileUrl);
     } else {
         res.status(404).json({ error: 'Fayl topilmadi' });
@@ -284,7 +282,7 @@ app.post('/api/admin/notify', async (req, res) => {
     }
 });
 
-// ----- YANGI: Admin broadcast (barcha foydalanuvchilarga xabar yuborish) -----
+// ----- ADMIN BROADCAST -----
 app.post('/api/admin/broadcast', async (req, res) => {
     const { message, userId } = req.body;
     if (!message || message.trim().length === 0) {
@@ -331,7 +329,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
     });
 });
 
-// ----- YANGI: Foydalanuvchi xabarlarini olish (admin uchun) -----
+// ----- FOYDALANUVCHI XABARLARI (admin uchun) -----
 app.get('/api/admin/messages', (req, res) => {
     const { userId } = req.query;
     if (!ADMIN_IDS.includes(Number(userId))) {
@@ -340,7 +338,7 @@ app.get('/api/admin/messages', (req, res) => {
     res.json(messages);
 });
 
-// ----- YANGI: Foydalanuvchi uchun xabarlar (o'z xabarlari + admin broadcast) -----
+// ----- FOYDALANUVCHI UCHUN XABARLAR (o'zi + admin broadcast) -----
 app.get('/api/user/messages', (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId kerak' });
