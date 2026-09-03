@@ -328,6 +328,7 @@
         .message-item .msg-time { font-size: 11px; color: var(--gray-text); }
         .message-item .msg-content { margin-top: 4px; }
         .message-item .msg-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .media-player { max-width: 100%; margin-top: 8px; border-radius: 8px; }
 
         @media (max-width: 480px) {
             .stat-grid { grid-template-columns: 1fr 1fr; }
@@ -1199,7 +1200,7 @@
         container.innerHTML = html;
     }
 
-    // ---- DELETE, EXTEND, OPEN DETAIL (o‘zgarmagan) ----
+    // ---- DELETE, EXTEND, OPEN DETAIL ----
     async function deleteAppeal(appealId) {
         if (!isAdminFlag) return;
         tg.showPopup({
@@ -1363,7 +1364,7 @@
         }
     }
 
-    // ---- ADMIN USER MESSAGES (yuklab olish tugmasi bilan) ----
+    // ---- ADMIN USER MESSAGES (yuklab olish va media player bilan) ----
     async function renderUserMessages() {
         if (!isAdminFlag) return;
         const container = document.getElementById('userMessagesList');
@@ -1379,10 +1380,17 @@
             let html = '';
             messages.slice().reverse().forEach(msg => {
                 const typeIcon = msg.type === 'audio' ? '🎵' : msg.type === 'video_note' ? '🎥' : '💬';
-                const contentDisplay = msg.type === 'text' ? msg.content : (msg.type === 'audio' ? '🎵 Audio' : '🎥 Dumaloq video');
+                let contentDisplay = msg.type === 'text' ? msg.content : (msg.type === 'audio' ? '🎵 Audio' : '🎥 Dumaloq video');
+                let mediaHtml = '';
                 let actions = '';
                 if (msg.fileId) {
                     const fileUrl = `/api/file/${msg.fileId}`;
+                    // Media player
+                    if (msg.type === 'video_note') {
+                        mediaHtml = `<video class="media-player" controls><source src="${fileUrl}" type="video/mp4"></video>`;
+                    } else if (msg.type === 'audio') {
+                        mediaHtml = `<audio class="media-player" controls><source src="${fileUrl}"></audio>`;
+                    }
                     actions = `
                         <div class="msg-actions">
                             <a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline" style="width:auto;"><i class="fas fa-download"></i> Yuklab olish</a>
@@ -1398,6 +1406,7 @@
                         <div class="msg-content">
                             <span>${typeIcon} ${contentDisplay}</span>
                             ${msg.type === 'text' ? `<div style="margin-top:4px;">${msg.content}</div>` : ''}
+                            ${mediaHtml}
                         </div>
                         ${actions}
                     </div>

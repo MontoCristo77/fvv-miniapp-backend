@@ -34,8 +34,9 @@ let appeals = loadJSON(DATA_FILE);
 let users = loadJSON(USERS_FILE);
 let messages = loadJSON(MESSAGES_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
+let nextMsgId = messages.length ? Math.max(...messages.map(m => m.id)) + 1 : 1;
 
-const ADMIN_IDS = [7117334799, 72259146]; // O'zingizning admin ID laringiz
+const ADMIN_IDS = [7117334799];
 
 async function sendTelegramMessage(chatId, text, extra = {}) {
     if (!BOT_TOKEN) return false;
@@ -54,27 +55,38 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
     }
 }
 
-// Foydalanuvchiga xabar yuborish (matn)
-async function sendMessageToUser(userId, text) {
-    return sendTelegramMessage(userId, text);
+// Telegram fayl URL'ni olish
+async function getFileUrl(fileId) {
+    if (!BOT_TOKEN || !fileId) return null;
+    try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.ok && data.result.file_path) {
+            return `https://api.telegram.org/file/bot${BOT_TOKEN}/${data.result.file_path}`;
+        }
+        return null;
+    } catch (e) {
+        console.error('Fayl URL olish xatolik:', e);
+        return null;
+    }
 }
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// ----- WEBHOOK (barcha xabarlarni qabul qiladi) -----
+// ----- WEBHOOK -----
 app.post('/webhook', async (req, res) => {
     const update = req.body;
     console.log('📥 Webhook so‘rovi:', JSON.stringify(update, null, 2));
 
-    // Agar xabar bo'lsa
     if (update.message) {
         const msg = update.message;
         const chatId = msg.chat.id;
         const from = msg.from;
 
-        // Foydalanuvchini ro'yxatga olish (agar mavjud bo'lmasa)
+        // Foydalanuvchini ro'yxatga olish
         const user = {
             id: from.id,
             firstName: from.first_name || '',
@@ -96,7 +108,7 @@ app.post('/webhook', async (req, res) => {
             return;
         }
 
-        // Foydalanuvchi yuborgan xabarni saqlash (matn, audio, video_note)
+        // Oddiy xabarlarni messages.json ga saqlash (appeals ga EMAS!)
         let messageType = 'text';
         let content = null;
         let fileId = null;
@@ -113,25 +125,26 @@ app.post('/webhook', async (req, res) => {
             fileId = msg.video_note.file_id;
             content = 'Dumaloq video';
         } else {
-            // Boshqa turdagi xabarlarni e'tiborsiz qoldiramiz (yoki keyin qo'shamiz)
+            // Boshqa turdagi xabarlarni e'tiborsiz qoldiramiz
             res.sendStatus(200);
             return;
         }
 
         const newMessage = {
-            id: messages.length + 1,
+            id: nextMsgId++,
             userId: from.id,
             userName: (from.first_name || '') + ' ' + (from.last_name || ''),
             type: messageType,
             content: content,
             fileId: fileId || null,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            isAdminBroadcast: false
         };
         messages.push(newMessage);
         saveJSON(MESSAGES_FILE, messages);
         console.log(`📩 Yangi xabar saqlandi: ${messageType} dan ${user.id}`);
 
-        // Adminlarga xabar kelganligi haqida xabar yuborish (faqat matn yoki audio yoki video)
+        // Adminlarga xabar kelganligi haqida xabar yuborish (faqat xabar, appeals emas)
         const adminText = `📩 *Yangi xabar!*\n\n👤 *Foydalanuvchi:* ${user.firstName} ${user.lastName}\n📌 *Tur:* ${messageType}\n📝 *Matn:* ${msg.text || 'Audio/Video'}\n🕒 *Vaqt:* ${new Date().toLocaleString()}`;
         ADMIN_IDS.forEach(async (adminId) => {
             await sendTelegramMessage(adminId, adminText);
@@ -144,7 +157,20 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-// ----- API: murojaatlar (oldingidek) -----
+// ----- API: fayl yuklab olish (fileId orqali) ----
+app.get('/api/file/:fileId', async (req, res) => {
+    const fileId = req.params.fileId;
+    const fileUrl = await getFileUrl(fileId);
+    if (fileUrl) {
+        // Brauzerda media ko'rsatish uchun redirect emas, balki proxylash kerak?
+        // Hozircha redirect, lekin agar media bo'lsa, uni ko'rsatish uchun iframe/video ishlatiladi.
+        res.redirect(fileUrl);
+    } else {
+        res.status(404).json({ error: 'Fayl topilmadi' });
+    }
+});
+
+// ----- API: murojaatlar (appeals) -----
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
 app.post('/api/appeals', async (req, res) => {
@@ -172,7 +198,7 @@ app.post('/api/appeals', async (req, res) => {
     appeals.push(newAppeal);
     saveJSON(DATA_FILE, appeals);
 
-    // Adminlarga xabar yuborish
+    // Adminlarga "yangi murojaat" xabari
     try {
         const adminMessage = 
 `📩 *Yangi murojaat #${newAppeal.id} keldi!*
@@ -199,7 +225,7 @@ app.post('/api/appeals', async (req, res) => {
     res.status(201).json(newAppeal);
 });
 
-// ----- API: ADMIN (murojaatlar, foydalanuvchilar, xabarlar) -----
+// ----- API: ADMIN -----
 app.get('/api/admin/appeals', (req, res) => res.json(appeals));
 
 app.put('/api/admin/appeals/:id', (req, res) => {
@@ -260,24 +286,33 @@ app.post('/api/admin/notify', async (req, res) => {
 
 // ----- YANGI: Admin broadcast (barcha foydalanuvchilarga xabar yuborish) -----
 app.post('/api/admin/broadcast', async (req, res) => {
-    const { message } = req.body;
+    const { message, userId } = req.body;
     if (!message || message.trim().length === 0) {
         return res.status(400).json({ error: 'Xabar matnini kiriting!' });
     }
-
-    // Admin tekshiruvi (xavfsizlik)
-    // Biz admin ekanligini tekshirish uchun so'rov yuboruvchi user ID ni olishimiz kerak.
-    // Buni frontenddan userId ni yuborish orqali yoki session orqali qilish mumkin.
-    // Hozircha qulaylik uchun frontenddan userId ni yuboramiz va tekshiramiz.
-    const { userId } = req.body;
     if (!ADMIN_IDS.includes(Number(userId))) {
         return res.status(403).json({ error: 'Ruxsat yo‘q! Faqat admin.' });
     }
 
     const allUsers = loadJSON(USERS_FILE);
-    const sentCount = 0;
+    let sentCount = 0;
     const failed = [];
 
+    // Broadcast xabarni messages.json ga admin_broadcast sifatida saqlash
+    const broadcastMsg = {
+        id: nextMsgId++,
+        userId: 0,
+        userName: 'Admin',
+        type: 'admin_broadcast',
+        content: message,
+        fileId: null,
+        createdAt: new Date().toISOString(),
+        isAdminBroadcast: true
+    };
+    messages.push(broadcastMsg);
+    saveJSON(MESSAGES_FILE, messages);
+
+    // Har bir foydalanuvchiga xabar yuborish
     for (const user of allUsers) {
         try {
             await sendTelegramMessage(user.id, `📢 *Admin xabari:*\n\n${message}`);
@@ -298,12 +333,19 @@ app.post('/api/admin/broadcast', async (req, res) => {
 
 // ----- YANGI: Foydalanuvchi xabarlarini olish (admin uchun) -----
 app.get('/api/admin/messages', (req, res) => {
-    // Admin tekshiruvi (oddiy)
     const { userId } = req.query;
     if (!ADMIN_IDS.includes(Number(userId))) {
         return res.status(403).json({ error: 'Ruxsat yo‘q!' });
     }
     res.json(messages);
+});
+
+// ----- YANGI: Foydalanuvchi uchun xabarlar (o'z xabarlari + admin broadcast) -----
+app.get('/api/user/messages', (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: 'userId kerak' });
+    const userMessages = messages.filter(m => m.userId === Number(userId) || m.isAdminBroadcast);
+    res.json(userMessages);
 });
 
 // ----- ADMINLIKNI TEKSHIRISH -----
