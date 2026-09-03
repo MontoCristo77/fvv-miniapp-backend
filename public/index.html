@@ -322,6 +322,13 @@
         .contact-row .c-title { font-weight: 700; font-size: 14px; }
         .contact-row .c-sub { font-size: 13px; color: var(--gray-text); }
 
+        .message-item { background: #fbfdff; border: 1px solid #eaf0f8; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        .message-item .msg-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .message-item .msg-user { font-weight: 700; }
+        .message-item .msg-time { font-size: 11px; color: var(--gray-text); }
+        .message-item .msg-content { margin-top: 4px; }
+        .message-item .msg-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+
         @media (max-width: 480px) {
             .stat-grid { grid-template-columns: 1fr 1fr; }
             .stat-grid-3 { grid-template-columns: 1fr 1fr; }
@@ -367,7 +374,7 @@
                 <div class="icon-box icon-red"><i class="fas fa-bell"></i></div>
                 <div class="row-text">
                     <div class="row-title">Bildirishnomalar</div>
-                    <div class="row-sub">Yangi javoblar va o'zgarishlar haqida ma'lumot oling</div>
+                    <div class="row-sub">Yangi javoblar va admin xabarlari</div>
                 </div>
                 <i class="fas fa-chevron-right chevron"></i>
             </div>
@@ -593,7 +600,6 @@
                 <div class="chart-box"><canvas id="statsChart"></canvas></div>
                 <div class="chart-box"><canvas id="statsChartDoughnut"></canvas></div>
             </div>
-            <!-- Admin qo‘shimcha tugmalar -->
             <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
                 <button class="btn btn-sm btn-outline" onclick="navigateTo('adminBroadcast')"><i class="fas fa-bullhorn"></i> Xabar yuborish</button>
                 <button class="btn btn-sm btn-outline" onclick="navigateTo('adminMessages')"><i class="fas fa-inbox"></i> Foydalanuvchi xabarlari</button>
@@ -939,7 +945,7 @@
         if (sectionId === 'userAppeals') renderUserAppeals();
         if (sectionId === 'adminDashboard') renderAdminDashboard();
         if (sectionId === 'adminAppeals') renderAdminAppeals();
-        if (sectionId === 'userNotifications') renderNotifications();
+        if (sectionId === 'userNotifications') renderUserNotifications();
         if (sectionId === 'adminMessages') renderUserMessages();
         if (sectionId === 'userNewAppeal') goToStep(1);
     }
@@ -964,30 +970,44 @@
         try { return await response.json(); } catch { return null; }
     }
 
-    async function renderNotifications() {
+    // ---- USER NOTIFICATIONS (o'z xabarlari + admin broadcast) ----
+    async function renderUserNotifications() {
         try {
-            const allAppeals = await apiFetch('/appeals');
-            const myAppeals = allAppeals.filter(a => a.userId === currentUser.id && a.adminResponse);
+            const response = await fetch(`/api/user/messages?userId=${currentUser.id}`);
+            const allMessages = await response.json();
             const container = document.getElementById('userNotification');
-            if (!myAppeals.length) {
+            if (!allMessages.length) {
                 container.innerHTML = '<p class="muted">Hozircha xabarnoma yo‘q.</p>';
                 return;
             }
             let html = '';
-            myAppeals.sort((a,b) => new Date(b.responseDate) - new Date(a.responseDate));
-            myAppeals.forEach(a => {
-                html += `
-                    <div class="notification-item">
-                        <div><strong>#${a.id}</strong> - ${a.subject || a.type} ${typeChipHtml(a.type)}</div>
-                        <div style="margin-top:4px;">${a.adminResponse}</div>
-                        <div class="time">${new Date(a.responseDate).toLocaleString()}</div>
-                    </div>
-                `;
+            allMessages.slice().reverse().forEach(msg => {
+                if (msg.isAdminBroadcast) {
+                    html += `
+                        <div class="notification-item" style="border-left-color: var(--purple);">
+                            <div><strong>📢 Admin xabari</strong></div>
+                            <div style="margin-top:4px;">${msg.content}</div>
+                            <div class="time">${new Date(msg.createdAt).toLocaleString()}</div>
+                        </div>
+                    `;
+                } else if (msg.userId === currentUser.id && msg.type === 'text') {
+                    html += `
+                        <div class="notification-item">
+                            <div><strong>💬 Siz yuborgan xabar</strong></div>
+                            <div style="margin-top:4px;">${msg.content}</div>
+                            <div class="time">${new Date(msg.createdAt).toLocaleString()}</div>
+                        </div>
+                    `;
+                }
             });
-            container.innerHTML = html;
-        } catch (err) { console.error(err); }
+            container.innerHTML = html || '<p class="muted">Hozircha xabarnoma yo‘q.</p>';
+        } catch (err) {
+            console.error(err);
+            document.getElementById('userNotification').innerHTML = '<p class="muted">Xatolik yuz berdi.</p>';
+        }
     }
 
+    // ---- FOYDALANUVCHI MUROJAATLARI ----
     async function renderUserAppeals() {
         if (isAdminFlag) return;
         const container = document.getElementById('userAppealsList');
@@ -1043,6 +1063,7 @@
         }
     }
 
+    // ---- ADMIN DASHBOARD ----
     let chartInstance = null, chartDoughnut = null;
 
     async function renderAdminDashboard() {
@@ -1115,6 +1136,7 @@
         } catch (err) { console.error(err); }
     }
 
+    // ---- ADMIN APPEALS ----
     let allAppealsCache = [];
 
     async function renderAdminAppeals() {
@@ -1177,6 +1199,7 @@
         container.innerHTML = html;
     }
 
+    // ---- DELETE, EXTEND, OPEN DETAIL (o‘zgarmagan) ----
     async function deleteAppeal(appealId) {
         if (!isAdminFlag) return;
         tg.showPopup({
@@ -1315,7 +1338,7 @@
         }
     }
 
-    // ----- YANGI: Broadcast -----
+    // ---- ADMIN BROADCAST ----
     async function sendBroadcast() {
         const message = document.getElementById('broadcastMessage').value.trim();
         if (!message) {
@@ -1340,7 +1363,7 @@
         }
     }
 
-    // ----- YANGI: Foydalanuvchi xabarlarini yuklash -----
+    // ---- ADMIN USER MESSAGES (yuklab olish tugmasi bilan) ----
     async function renderUserMessages() {
         if (!isAdminFlag) return;
         const container = document.getElementById('userMessagesList');
@@ -1357,11 +1380,26 @@
             messages.slice().reverse().forEach(msg => {
                 const typeIcon = msg.type === 'audio' ? '🎵' : msg.type === 'video_note' ? '🎥' : '💬';
                 const contentDisplay = msg.type === 'text' ? msg.content : (msg.type === 'audio' ? '🎵 Audio' : '🎥 Dumaloq video');
+                let actions = '';
+                if (msg.fileId) {
+                    const fileUrl = `/api/file/${msg.fileId}`;
+                    actions = `
+                        <div class="msg-actions">
+                            <a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline" style="width:auto;"><i class="fas fa-download"></i> Yuklab olish</a>
+                        </div>
+                    `;
+                }
                 html += `
-                    <div class="notification-item">
-                        <div><strong>${msg.userName}</strong> ${typeIcon}</div>
-                        <div style="font-size:13px;">${contentDisplay}</div>
-                        <div class="time">${new Date(msg.createdAt).toLocaleString()}</div>
+                    <div class="message-item">
+                        <div class="msg-header">
+                            <span class="msg-user">${msg.userName}</span>
+                            <span class="msg-time">${new Date(msg.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div class="msg-content">
+                            <span>${typeIcon} ${contentDisplay}</span>
+                            ${msg.type === 'text' ? `<div style="margin-top:4px;">${msg.content}</div>` : ''}
+                        </div>
+                        ${actions}
                     </div>
                 `;
             });
@@ -1372,9 +1410,7 @@
         }
     }
 
-    // ==========================
-    // ISHGA TUSHIRISH
-    // ==========================
+    // ---- ISHGA TUSHIRISH ----
     checkAdminStatus();
     console.log('Joriy user:', currentUser.id);
 </script>
