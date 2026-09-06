@@ -36,7 +36,7 @@ let messages = loadJSON(MESSAGES_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 let nextMsgId = messages.length ? Math.max(...messages.map(m => m.id)) + 1 : 1;
 
-const ADMIN_IDS = [7117334799,72259146]; // O'zingizning admin ID laringiz
+const ADMIN_IDS = [7117334799, 72259146]; // O'zingizning admin ID laringiz
 
 async function sendTelegramMessage(chatId, text, extra = {}) {
     if (!BOT_TOKEN) return false;
@@ -86,6 +86,13 @@ app.post('/webhook', async (req, res) => {
         const chatId = msg.chat.id;
         const from = msg.from;
 
+        // 🛡️ FILTR: Faqat shaxsiy chatlarni qabul qilamiz (guruh/kanal xabarlarini bloklaymiz)
+        if (msg.chat.type !== 'private') {
+            console.log('⏭️ Guruh/kanaldan xabar, e\'tiborsiz qoldirildi');
+            res.sendStatus(200);
+            return;
+        }
+
         // Foydalanuvchini ro'yxatga olish
         const user = {
             id: from.id,
@@ -108,7 +115,7 @@ app.post('/webhook', async (req, res) => {
             return;
         }
 
-        // Oddiy xabarlarni messages.json ga saqlash (appeals ga EMAS!)
+        // Oddiy xabarlarni messages.json ga saqlash
         let messageType = 'text';
         let content = null;
         let fileId = null;
@@ -125,7 +132,7 @@ app.post('/webhook', async (req, res) => {
             fileId = msg.video_note.file_id;
             content = 'Dumaloq video';
         } else {
-            // Boshqa turdagi xabarlarni e'tiborsiz qoldiramiz
+            // Boshqa turdagi xabarlarni (masalan, rasm, stiker) e'tiborsiz qoldiramiz
             res.sendStatus(200);
             return;
         }
@@ -144,7 +151,7 @@ app.post('/webhook', async (req, res) => {
         saveJSON(MESSAGES_FILE, messages);
         console.log(`📩 Yangi xabar saqlandi: ${messageType} dan ${user.id}`);
 
-        // Adminlarga xabar kelganligi haqida xabar yuborish (faqat xabar, appeals emas)
+        // Adminlarga xabar kelganligi haqida xabar yuborish
         const adminText = `📩 *Yangi xabar!*\n\n👤 *Foydalanuvchi:* ${user.firstName} ${user.lastName}\n📌 *Tur:* ${messageType}\n📝 *Matn:* ${msg.text || 'Audio/Video'}\n🕒 *Vaqt:* ${new Date().toLocaleString()}`;
         ADMIN_IDS.forEach(async (adminId) => {
             await sendTelegramMessage(adminId, adminText);
@@ -157,7 +164,7 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-// ----- API: fayl yuklab olish (fileId orqali) -----
+// ----- API: fayl yuklab olish -----
 app.get('/api/file/:fileId', async (req, res) => {
     const fileId = req.params.fileId;
     const fileUrl = await getFileUrl(fileId);
@@ -168,7 +175,7 @@ app.get('/api/file/:fileId', async (req, res) => {
     }
 });
 
-// ----- API: murojaatlar (appeals) -----
+// ----- API: murojaatlar -----
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
 app.post('/api/appeals', async (req, res) => {
@@ -296,7 +303,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
     let sentCount = 0;
     const failed = [];
 
-    // Broadcast xabarni messages.json ga admin_broadcast sifatida saqlash
+    // Broadcast xabarni messages.json ga saqlash
     const broadcastMsg = {
         id: nextMsgId++,
         userId: 0,
@@ -310,7 +317,6 @@ app.post('/api/admin/broadcast', async (req, res) => {
     messages.push(broadcastMsg);
     saveJSON(MESSAGES_FILE, messages);
 
-    // Har bir foydalanuvchiga xabar yuborish
     for (const user of allUsers) {
         try {
             await sendTelegramMessage(user.id, `📢 *Admin xabari:*\n\n${message}`);
@@ -338,7 +344,7 @@ app.get('/api/admin/messages', (req, res) => {
     res.json(messages);
 });
 
-// ----- FOYDALANUVCHI UCHUN XABARLAR (o'zi + admin broadcast) -----
+// ----- FOYDALANUVCHI UCHUN XABARLAR -----
 app.get('/api/user/messages', (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId kerak' });
