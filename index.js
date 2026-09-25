@@ -214,7 +214,7 @@ app.post('/api/appeals', async (req, res) => {
 📝 *Mavzu:* ${newAppeal.subject || 'Ko‘rsatilmagan'}
 📝 *Tavsif:* ${newAppeal.description.substring(0, 100)}${newAppeal.description.length > 100 ? '...' : ''}
 
-🔗 *Ko‘rish uchun:* https://t.me/${BOT_USERNAME}?start=appeal_${newAppeal.id}`;
+🔗 *Ko‘rish uchun:* https://t.me/${BOT_USERNAME}?startapp=appeal_${newAppeal.id}`;
 
         const adminPromises = ADMIN_IDS.map(adminId => 
             sendTelegramMessage(adminId, adminMessage).catch(err => 
