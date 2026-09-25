@@ -359,10 +359,11 @@ app.post('/api/check-admin', (req, res) => {
 });
 
 // ----- FRONTEND -----
-app.get('*', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+// Barcha boshqa so'rovlar uchun index.html ni yuborish
+app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
+// ----- SERVERNI ISHGA TUSHIRISH -----
 app.listen(PORT, () => {
     console.log(`✅ Server ${PORT} portda ishga tushdi`);
     if (BOT_TOKEN) {
