@@ -15,6 +15,9 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
 
+// Render URL manzilini environment o'zgaruvchisidan yoki default qiymatdan olish
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://fvv-miniapp-backend.onrender.com';
+
 function loadJSON(file) {
     try {
         if (fs.existsSync(file)) {
@@ -36,8 +39,9 @@ let messages = loadJSON(MESSAGES_FILE);
 let nextId = appeals.length ? Math.max(...appeals.map(a => a.id)) + 1 : 1;
 let nextMsgId = messages.length ? Math.max(...messages.map(m => m.id)) + 1 : 1;
 
-const ADMIN_IDS = [7117334799, 72259146]; // O'zingizning admin ID laringiz
+const ADMIN_IDS = [7117334799, 72259146];
 
+// ----- TELEGRAM XABAR YUBORISH -----
 async function sendTelegramMessage(chatId, text, extra = {}) {
     if (!BOT_TOKEN) return false;
     try {
@@ -55,7 +59,34 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
     }
 }
 
-// Telegram fayl URL'ni olish
+// ----- INLINE TUGMA YUBORISH -----
+async function sendInlineButton(chatId, text, buttonText, webAppUrl) {
+    if (!BOT_TOKEN) return false;
+    try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text,
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: buttonText, web_app: { url: webAppUrl } }
+                    ]]
+                }
+            })
+        });
+        const data = await res.json();
+        return data.ok === true;
+    } catch (e) {
+        console.error('Telegram inline tugma xatolik:', e.message);
+        return false;
+    }
+}
+
+// ----- TELEGRAM FAYL URL -----
 async function getFileUrl(fileId) {
     if (!BOT_TOKEN || !fileId) return null;
     try {
@@ -76,7 +107,9 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// ----- WEBHOOK -----
+// ==========================
+//  WEBHOOK - YANGILANGAN
+// ==========================
 app.post('/webhook', async (req, res) => {
     const update = req.body;
     console.log('📥 Webhook so‘rovi:', JSON.stringify(update, null, 2));
@@ -86,7 +119,7 @@ app.post('/webhook', async (req, res) => {
         const chatId = msg.chat.id;
         const from = msg.from;
 
-        // 🛡️ FILTR: Faqat shaxsiy chatlarni qabul qilamiz (guruh/kanal xabarlarini bloklaymiz)
+        // 🛡️ FILTR: Faqat shaxsiy chatlar
         if (msg.chat.type !== 'private') {
             console.log('⏭️ Guruh/kanaldan xabar, e\'tiborsiz qoldirildi');
             res.sendStatus(200);
@@ -108,14 +141,59 @@ app.post('/webhook', async (req, res) => {
             console.log(`✅ Yangi foydalanuvchi ro'yxatdan o'tdi: ${user.id}`);
         }
 
-        // /start buyrug'i
-        if (msg.text && msg.text === '/start') {
+        // ============ /start BUYRUQLARI ============
+        if (msg.text && msg.text.startsWith('/start')) {
+            const text = msg.text.trim();
+            
+            // Agar /start appeal_X - admin murojaatni ko'rmoqchi
+            if (text.startsWith('/start appeal_')) {
+                const appealId = text.replace('/start appeal_', '').trim();
+                const appeal = appeals.find(a => a.id === parseInt(appealId));
+                
+                if (!appeal) {
+                    await sendTelegramMessage(chatId, `❌ *#${appealId}* raqamli murojaat topilmadi.`);
+                    res.sendStatus(200);
+                    return;
+                }
+
+                // Admin tekshiruvi
+                if (!ADMIN_IDS.includes(Number(from.id))) {
+                    await sendTelegramMessage(chatId, `⛔ Siz admin emassiz. Bu murojaatni ko'rish huquqi yo'q.`);
+                    res.sendStatus(200);
+                    return;
+                }
+
+                // Inline tugma bilan yuborish
+                const webAppUrl = `${WEBAPP_URL}?startapp=appeal_${appealId}`;
+                const statusMap = { 
+                    'pending': '🟡 Yangi', 
+                    'in_progress': '🔵 Nazoratda', 
+                    'resolved': '🟢 Yakunlandi' 
+                };
+                
+                const messageText = 
+`📋 *Murojaat #${appeal.id}*
+
+👤 *Foydalanuvchi:* ${appeal.userName}
+📌 *Turi:* ${appeal.type}
+📍 *Tuzilma:* ${appeal.region}
+📝 *Mavzu:* ${appeal.subject || 'Ko‘rsatilmagan'}
+📊 *Holati:* ${statusMap[appeal.status] || appeal.status}
+
+👇 Quyidagi tugmani bosib, murojaatni to'liq ko'ring:`;
+
+                await sendInlineButton(chatId, messageText, "🔍 Murojaatni ko'rish", webAppUrl);
+                res.sendStatus(200);
+                return;
+            }
+            
+            // Oddiy /start
             await sendTelegramMessage(chatId, `Assalomu alaykum, ${user.firstName}! ✅ Siz ro'yxatdan o'tdingiz.\n\n📱 Murojaat yuborish uchun pastdagi tugmani bosing.`);
             res.sendStatus(200);
             return;
         }
 
-        // Oddiy xabarlarni messages.json ga saqlash
+        // ============ FOYDALANUVCHI XABARLARI ============
         let messageType = 'text';
         let content = null;
         let fileId = null;
@@ -132,7 +210,6 @@ app.post('/webhook', async (req, res) => {
             fileId = msg.video_note.file_id;
             content = 'Dumaloq video';
         } else {
-            // Boshqa turdagi xabarlarni (masalan, rasm, stiker) e'tiborsiz qoldiramiz
             res.sendStatus(200);
             return;
         }
@@ -151,7 +228,7 @@ app.post('/webhook', async (req, res) => {
         saveJSON(MESSAGES_FILE, messages);
         console.log(`📩 Yangi xabar saqlandi: ${messageType} dan ${user.id}`);
 
-        // Adminlarga xabar kelganligi haqida xabar yuborish
+        // Adminlarga xabar
         const adminText = `📩 *Yangi xabar!*\n\n👤 *Foydalanuvchi:* ${user.firstName} ${user.lastName}\n📌 *Tur:* ${messageType}\n📝 *Matn:* ${msg.text || 'Audio/Video'}\n🕒 *Vaqt:* ${new Date().toLocaleString()}`;
         ADMIN_IDS.forEach(async (adminId) => {
             await sendTelegramMessage(adminId, adminText);
@@ -164,7 +241,9 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-// ----- API: fayl yuklab olish -----
+// ==========================
+//  API: FAYL YUKLAB OLISH
+// ==========================
 app.get('/api/file/:fileId', async (req, res) => {
     const fileId = req.params.fileId;
     const fileUrl = await getFileUrl(fileId);
@@ -175,7 +254,9 @@ app.get('/api/file/:fileId', async (req, res) => {
     }
 });
 
-// ----- API: murojaatlar -----
+// ==========================
+//  API: MUROJAATLAR
+// ==========================
 app.get('/api/appeals', (req, res) => res.json(appeals));
 
 app.post('/api/appeals', async (req, res) => {
@@ -203,7 +284,7 @@ app.post('/api/appeals', async (req, res) => {
     appeals.push(newAppeal);
     saveJSON(DATA_FILE, appeals);
 
-    // Adminlarga "yangi murojaat" xabari
+    // Adminlarga "yangi murojaat" xabari - ENDI INLINE TUGMA BILAN
     try {
         const adminMessage = 
 `📩 *Yangi murojaat #${newAppeal.id} keldi!*
@@ -212,17 +293,17 @@ app.post('/api/appeals', async (req, res) => {
 📌 *Turi:* ${newAppeal.type}
 📍 *Tuzilma:* ${newAppeal.region}
 📝 *Mavzu:* ${newAppeal.subject || 'Ko‘rsatilmagan'}
-📝 *Tavsif:* ${newAppeal.description.substring(0, 100)}${newAppeal.description.length > 100 ? '...' : ''}
+📝 *Tavsif:* ${newAppeal.description.substring(0, 100)}${newAppeal.description.length > 100 ? '...' : ''}`;
 
-🔗 *Ko‘rish uchun:* https://t.me/${BOT_USERNAME}?startapp=appeal_${newAppeal.id}`;
-
+        // Har bir adminga inline tugma bilan yuborish
+        const webAppUrl = `${WEBAPP_URL}?startapp=appeal_${newAppeal.id}`;
         const adminPromises = ADMIN_IDS.map(adminId => 
-            sendTelegramMessage(adminId, adminMessage).catch(err => 
+            sendInlineButton(adminId, adminMessage, "🔍 Murojaatni ko'rish", webAppUrl).catch(err => 
                 console.error(`Admin ${adminId} ga xabar yuborishda xatolik:`, err)
             )
         );
         await Promise.all(adminPromises);
-        console.log(`✅ Adminlarga xabar yuborildi (murojaat #${newAppeal.id})`);
+        console.log(`✅ Adminlarga inline tugma yuborildi (murojaat #${newAppeal.id})`);
     } catch (err) {
         console.error('Adminlarga xabar yuborishda xatolik:', err);
     }
@@ -230,7 +311,9 @@ app.post('/api/appeals', async (req, res) => {
     res.status(201).json(newAppeal);
 });
 
-// ----- API: ADMIN -----
+// ==========================
+//  API: ADMIN
+// ==========================
 app.get('/api/admin/appeals', (req, res) => res.json(appeals));
 
 app.put('/api/admin/appeals/:id', (req, res) => {
@@ -289,7 +372,9 @@ app.post('/api/admin/notify', async (req, res) => {
     }
 });
 
-// ----- ADMIN BROADCAST -----
+// ==========================
+//  API: ADMIN BROADCAST
+// ==========================
 app.post('/api/admin/broadcast', async (req, res) => {
     const { message, userId } = req.body;
     if (!message || message.trim().length === 0) {
@@ -303,7 +388,6 @@ app.post('/api/admin/broadcast', async (req, res) => {
     let sentCount = 0;
     const failed = [];
 
-    // Broadcast xabarni messages.json ga saqlash
     const broadcastMsg = {
         id: nextMsgId++,
         userId: 0,
@@ -335,7 +419,9 @@ app.post('/api/admin/broadcast', async (req, res) => {
     });
 });
 
-// ----- FOYDALANUVCHI XABARLARI (admin uchun) -----
+// ==========================
+//  API: FOYDALANUVCHI XABARLARI (admin uchun)
+// ==========================
 app.get('/api/admin/messages', (req, res) => {
     const { userId } = req.query;
     if (!ADMIN_IDS.includes(Number(userId))) {
@@ -344,7 +430,9 @@ app.get('/api/admin/messages', (req, res) => {
     res.json(messages);
 });
 
-// ----- FOYDALANUVCHI UCHUN XABARLAR -----
+// ==========================
+//  API: FOYDALANUVCHI UCHUN XABARLAR
+// ==========================
 app.get('/api/user/messages', (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId kerak' });
@@ -352,20 +440,27 @@ app.get('/api/user/messages', (req, res) => {
     res.json(userMessages);
 });
 
-// ----- ADMINLIKNI TEKSHIRISH -----
+// ==========================
+//  API: ADMINLIKNI TEKSHIRISH
+// ==========================
 app.post('/api/check-admin', (req, res) => {
     const { userId } = req.body;
     res.json({ isAdmin: ADMIN_IDS.includes(Number(userId)) });
 });
 
-// ----- FRONTEND -----
-// Barcha boshqa so'rovlar uchun index.html ni yuborish
+// ==========================
+//  FRONTEND
+// ==========================
 app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-// ----- SERVERNI ISHGA TUSHIRISH -----
+
+// ==========================
+//  SERVERNI ISHGA TUSHIRISH
+// ==========================
 app.listen(PORT, () => {
     console.log(`✅ Server ${PORT} portda ishga tushdi`);
+    console.log(`🌐 WEBAPP_URL: ${WEBAPP_URL}`);
     if (BOT_TOKEN) {
         console.log('🤖 Telegram bot ulangan');
     } else {
